@@ -1,0 +1,7 @@
+make
+
+qemu-system-x86_64 \
+        -kernel out/kernel.img \
+        -nic none -m 4G -s -S &
+
+gdb -x gdb/gdb-cmd
