@@ -11,11 +11,17 @@ WARNINGS := \
 CFLAGS := \
 	-g -ffreestanding -fno-strict-aliasing \
 	-mno-red-zone -mno-mmx -mno-sse -mno-sse2 -mno-3dnow
-LDFLAGS := $(CFLAGS) -nostdlib -T src/boot/i386/boot.ld
+LDFLAGS := $(CFLAGS) -nostdlib
 
-ASM_SRCFILES := src/boot/i386/boot.S
-SRCFILES := src/main.c 
-OBJFILES := $(patsubst %.S,$(OUTDIR)/%.o,$(ASM_SRCFILES)) $(patsubst %.c,$(OUTDIR)/%.o,$(SRCFILES))
+ARCH     := x86_64
+ARCHSRC  := src/arch/$(ARCH)
+BOOTSRC  := $(ARCHSRC)/boot
+ARCHSRCS := $(BOOTSRC)/boot.S $(ARCHSRC)/page.c
+LDSCRIPT := $(BOOTSRC)/boot.ld
+
+INCLUDES := include 
+SRCFILES := $(ARCHSRCS) src/main.c
+OBJFILES := $(patsubst %.src,$(OUTDIR)/%.o,$(addsuffix .src,$(basename $(SRCFILES))))
 DEPFILES := $(OBJFILES:.o=.d)
 
 KERNIMG := $(OUTDIR)/kernel.img
@@ -23,21 +29,23 @@ SYMFILE := $(OUTDIR)/kernel.sym
 
 .PHONY: all clean
 
-all: $(KERNIMG)
+all: $(KERNIMG) $(SYMFILE)
 
 clean:
 	rm -rf $(OUTDIR)
 
-$(KERNIMG): $(OBJFILES)
-	$(CROSSCC) $(CFLAGS) $(LDFLAGS) $(OBJFILES) -o $@
-	objcopy --only-keep-debug $@ $(SYMFILE)
+$(SYMFILE): $(KERNIMG)
+	objcopy --only-keep-debug $< $@
+
+$(KERNIMG): $(OBJFILES) $(LDSCRIPT)
+	$(CROSSCC) $(CFLAGS) $(LDFLAGS) -T $(LDSCRIPT) $(OBJFILES) -o $@
 
 $(OUTDIR)/%.o: %.S
 	mkdir -p $(dir $@)
-	$(CROSSCC) $(CFLAGS) -c -MMD $< -o $@
+	$(CROSSCC) $(CFLAGS) $(addprefix -I,$(INCLUDES)) -c -MMD $< -o $@
 
 $(OUTDIR)/%.o: %.c
 	mkdir -p $(dir $@)
-	$(CROSSCC) $(WARNINGS) $(CFLAGS) -c -MMD $< -o $@
+	$(CROSSCC) $(WARNINGS) $(CFLAGS) $(addprefix -I,$(INCLUDES)) -c -MMD $< -o $@
 
 -include $(DEPFILES)

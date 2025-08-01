@@ -11,9 +11,11 @@
 
 .global start
 
-.extern _KERN_TEXT_START
-.extern _KERN_DATA_END
-.extern _KERN_BSS_END
+.extern _MB1_LOAD_ADDR
+.extern _MB1_LOAD_END_ADDR
+.extern _MB1_BSS_END_ADDR
+
+.extern _KERN_INITSTACK_LMA
 
 mb1_magic: 
     .long MB1_MAGIC
@@ -24,11 +26,11 @@ mb1_checksum:
 mb1_header_addr:
     .long mb1_magic
 mb1_load_addr:
-    .long _KERN_TEXT_START
+    .long _MB1_LOAD_ADDR
 mb1_load_end_addr:
-    .long _KERN_DATA_END
+    .long _MB1_LOAD_END_ADDR
 mb1_bss_end_addr:
-    .long _KERN_BSS_END
+    .long _MB1_BSS_END_ADDR
 mb1_entry_attr:
     .long start
 mb1_width:
@@ -77,6 +79,15 @@ start:
     cmp $0x2BADB002, %eax
     jne mb1_fail
 
+    mov $_KERN_INITSTACK_LMA, %esp
+
+    call disable_cursor
+    call clr
+
+    cld
+    mov $boot_str, %esi
+    call puts
+
     lgdt gdtr
     ljmp $0x8, $set_cs
 set_cs:
@@ -87,13 +98,6 @@ set_cs:
     mov %ax, %gs
     mov %ax, %ss
 
-    call disable_cursor
-    call clr
-
-    cld
-    mov $boot_str, %esi
-    call puts
-
 loop:
     jmp loop
 
@@ -102,10 +106,8 @@ mb1_fail:
     call puts
     jmp loop
 
-.data
-
 boot_str:
-.asciz "Booting Kernel..."
+.asciz "Setting Up C Environment..."
 
 mb1_fail_error:
     .asciz "Invalid Multiboot1 Signature"

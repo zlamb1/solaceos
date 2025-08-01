@@ -1,4 +1,4 @@
-make
+make -j4
 
 if [[ $1 == 'debug' ]]; then
         qemu-system-x86_64 \
