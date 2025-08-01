@@ -9,7 +9,7 @@ WARNINGS := \
 	-Wno-error=format -Wsequence-point -Wswitch -Wwrite-strings
 
 CFLAGS := \
-	-g -ffreestanding -fno-strict-aliasing \
+	-g -ffreestanding -fno-strict-aliasing -mcmodel=large \
 	-mno-red-zone -mno-mmx -mno-sse -mno-sse2 -mno-3dnow
 LDFLAGS := $(CFLAGS) -nostdlib
 

@@ -7,38 +7,44 @@ SECTIONS
 
     . = _KERN_LMA;
 
-    .boot ALIGN(CONSTANT(MAXPAGESIZE)) :
+    .boot ALIGN(0x1000) :
     {
         _KERN_BOOT_START = .;
         *(.boot)
+    }
+
+    .boot.data ALIGN(0x1000) :
+    {
         *(.boot.data)
         _KERN_BOOT_END = .;
     }
 
-    . += _KERN_VMA;
+    . = ALIGN(0x1000);
 
-    .text ALIGN(CONSTANT(MAXPAGESIZE)) : AT(ADDR(.text) - _KERN_VMA)
+    . = _KERN_VMA + (_KERN_BOOT_END - _KERN_LMA);
+
+    .text ALIGN(0x1000) : AT(ADDR(.text) - _KERN_VMA + _KERN_LMA)
     {
         _KERN_TEXT_START = .;
         *(.text)
         _KERN_TEXT_END = .;
     }
 
-    .rodata ALIGN(CONSTANT(MAXPAGESIZE)) : AT(ADDR(.rodata) - _KERN_VMA)
+    .rodata ALIGN(0x1000) : AT(ADDR(.rodata) - _KERN_VMA + _KERN_LMA)
     {
         _KERN_RODATA_START = .;
         *(.rodata*)
         _KERN_RODATA_END = .;
     }
 
-    .data ALIGN(CONSTANT(MAXPAGESIZE)) : AT(ADDR(.data) - _KERN_VMA)
+    .data ALIGN(0x1000) : AT(ADDR(.data) - _KERN_VMA + _KERN_LMA)
     {
         _KERN_DATA_START = .;
         *(.data)
         _KERN_DATA_END = .;
     }
 
-    .bss ALIGN(CONSTANT(MAXPAGESIZE)) :
+    .bss ALIGN(0x1000) : AT(ADDR(.bss) - _KERN_VMA + _KERN_LMA)
     {
         _KERN_BSS_START = .;
         *(.bss)
@@ -46,16 +52,17 @@ SECTIONS
     }
 
     # initial stack space used before allocation
-    .stack ALIGN(CONSTANT(MAXPAGESIZE)) : AT(ADDR(.stack) - _KERN_VMA)
+    .stack ALIGN(0x1000) : AT(ADDR(.stack) - _KERN_VMA + _KERN_LMA)
     {
         _KERN_INITSTACK_START = .;
-        . += 1024;
+        . += 0x1000;
         _KERN_INITSTACK_END = .;
     }
 
     _MB1_LOAD_ADDR = _KERN_BOOT_START;
-    _MB1_LOAD_END_ADDR = _KERN_DATA_END - _KERN_VMA;
-    _MB1_BSS_END_ADDR = _KERN_BSS_END - _KERN_VMA;
+    _MB1_LOAD_END_ADDR = _KERN_DATA_END - _KERN_VMA + _KERN_LMA;
+    _MB1_BSS_END_ADDR = _KERN_BSS_END - _KERN_VMA + _KERN_LMA;
 
-    _KERN_INITSTACK_LMA = _KERN_INITSTACK_START - _KERN_VMA;
+    _KERN_LMA_END = _KERN_INITSTACK_END - _KERN_VMA + _KERN_LMA;
+    _KERN_INITSTACK_LMA = _KERN_INITSTACK_START - _KERN_VMA + _KERN_LMA;
 }
