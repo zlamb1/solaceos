@@ -1,0 +1,26 @@
+# TODO: assign automatic loopback device and use var
+set -e
+
+DIR=$2
+
+cleanup() {
+    if mountpoint -q -- "$DIR"; then
+        sudo umount $DIR
+    fi
+    sudo losetup -D /dev/loop0
+}
+
+trap cleanup EXIT
+
+mkdir -p $DIR
+dd if=/dev/zero of=${1} bs=20MiB count=1
+parted -s ${1} mklabel msdos mkpart primary ext2 2MiB 18MiB
+sudo losetup -P /dev/loop0 ${1}
+sudo mke2fs /dev/loop0p1
+sudo mount /dev/loop0p1 $DIR 
+sudo mkdir -p ${DIR}/boot/grub
+sudo cp ${3} ${DIR}/boot/grub/grub.cfg
+sudo cp ${4} ${DIR}/boot/${6}
+sudo cp ${5} ${DIR}/boot/${7}
+sudo grub-install --target=i386-pc --boot-directory=${DIR}/boot --no-floppy --modules="normal part_msdos ext2 multiboot biosdisk" /dev/loop0
+sync

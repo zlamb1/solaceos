@@ -11,14 +11,11 @@
 
 .global start
 
-.extern _KERN_LMA
-.extern _KERN_VMA
-
 .extern _MB1_LOAD_ADDR
 .extern _MB1_LOAD_END_ADDR
 .extern _MB1_BSS_END_ADDR
 
-.extern _KERN_INITSTACK_LMA
+.extern _LDR_STACK_START
 
 mb1_magic: 
     .long MB1_MAGIC
@@ -42,16 +39,6 @@ mb1_height:
     .long 0
 mb1_depth:
     .long 0
-
-disable_cursor:
-    mov $0xA, %al
-    mov $0x3D4, %dx
-    outb %al, %dx
-    movw $0x3D5, %dx
-    inb %dx, %al
-    orb $0x20, %al
-    outb %al, %dx
-    ret
 
 clr:
     mov $0xB8000, %ecx
@@ -82,13 +69,12 @@ start:
     cmp $0x2BADB002, %eax
     jne mb1_fail
 
-    mov $_KERN_INITSTACK_LMA, %esp
+    mov $_LDR_STACK_START, %esp
 
-    call disable_cursor
     call clr
 
     cld
-    mov $boot_str, %esi
+    mov $early_boot_msg, %esi
     call puts
 
     lgdt gdtr
@@ -102,56 +88,7 @@ set_cs:
     mov %ax, %gs
     mov %ax, %ss
 
-# set up pml4t entry
-    mov $pdptBoot, %eax
-    and $-0x1000, %eax
-    or $3, %eax
-    mov %eax, pml4tBoot
-
-# set up pdpt entry
-    mov $pdtBoot, %eax
-    and $-0x1000, %eax
-    or $3, %eax
-    mov %eax, pdptBoot
-
-# set up pdt entry
-    mov $ptBoot, %eax
-    and $-0x1000, %eax
-    or $3, %eax
-    mov %eax, pdtBoot
-
-# set up first page table
-    mov $ptBoot, %ecx
-    mov $0, %edx
-1:
-    cmp $ptBootEnd, %ecx
-    jge 2f
-    mov %edx, %eax
-    or $3, %eax
-    mov %eax, (%ecx)
-    add $8, %ecx
-    add $0x1000, %edx
-    jmp 1b
-2:
-
-# enable paging
-    mov $pml4tBoot, %eax
-    mov %eax, %cr3
-
-    mov %cr4, %eax
-    or $0x20, %eax
-    mov %eax, %cr4
-
-    mov $0xC0000080, %ecx
-    rdmsr
-    or $0x100, %eax
-    wrmsr
-
-    mov %cr0, %eax
-    or $0x80000001, %eax
-    mov %eax, %cr0
-
-    ljmp $0x18, $boot64
+    mov $3, %ax
 
 loop:
     hlt
@@ -162,101 +99,10 @@ mb1_fail:
     call puts
     jmp loop
 
-.code64
+.data
 
-boot64:
-    mov $0x20, %ax
-    mov %ax, %ds
-    mov %ax, %fs
-    mov %ax, %es
-    mov %ax, %gs
-    mov %ax, %ss
-
-    mov $pdptBootVMA, %rax
-    and $-0x1000, %rax
-    or $3, %rax
-    mov %rax, pml4tBootVMA
-
-    mov $pdtBootVMA, %rax
-    and $-0x1000, %rax
-    or $3, %rax
-    mov %rax, pdptBootVMA
-
-    mov $ptBootVMA, %rax
-    and $-0x1000, %rax
-    or $3, %rax
-    mov %rax, pdtBootVMA
-
-    mov $ptBootVMA, %ecx
-    mov $_KERN_LMA, %edx
-1:
-    cmp $ptBootEndVMA, %ecx
-    jge 2f
-    mov %edx, %eax
-    or $3, %eax
-    mov %eax, (%ecx)
-    add $8, %ecx
-    add $0x1000, %edx
-    jmp 1b
-2:
-
-# flush TLB
-    mov $pml4tBoot, %rax
-    mov %rax, %cr3
-
-.extern kmain
-
-    # pass MB1 info pointer
-    mov %rbx, %rdi
-
-    movabs $kmain, %rax
-    jmp *%rax
-
-.section .boot.data, "aw"
-
-pml4tBoot:
-.rept 256
-.quad 0
-.endr
-pml4tBootVMA:
-.rept 256
-.quad 0
-.endr
-
-pdptBoot:
-.rept 512
-.quad 0
-.endr
-
-pdptBootVMA:
-.rept 512
-.quad 0
-.endr
-
-pdtBoot:
-.rept 512
-.quad 0
-.endr
-
-pdtBootVMA:
-.rept 512
-.quad 0
-.endr
-
-ptBoot:
-.rept 512
-.quad 0
-.endr
-ptBootEnd:
-
-ptBootVMA:
-.rept 512
-.quad 0
-.endr
-ptBootEndVMA:
-
-boot_str:
-.asciz "Setting Up C Environment..."
+early_boot_msg:
+.asciz "Solace32: Boot Entry"
 
 mb1_fail_error:
     .asciz "Invalid Multiboot1 Signature"
@@ -298,4 +144,5 @@ gdtr:
     gdtr_size: 
         .short gdt_end - gdt_start - 1
     gdtr_offset:
-        .quad gdt_start
+        .long gdt_start
+        .long 0

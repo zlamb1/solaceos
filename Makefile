@@ -8,44 +8,77 @@ WARNINGS := \
 	-Wcast-qual -Wdeclaration-after-statement -Wmissing-include-dirs -Wnested-externs \
 	-Wno-error=format -Wsequence-point -Wswitch -Wwrite-strings
 
-CFLAGS := \
-	-g -ffreestanding -fno-strict-aliasing -mcmodel=large \
-	-mno-red-zone -mno-mmx -mno-sse -mno-sse2 -mno-3dnow
-LDFLAGS := $(CFLAGS) -nostdlib
+CFLAGS   := -g -ffreestanding -fno-strict-aliasing  \
+	        -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -mno-3dnow
+CFLAGS32 := $(CFLAGS) -m32
+CFLAGS64 := $(CFLAGS) -mcmodel=large
 
-ARCH     := x86_64
-ARCHSRC  := src/arch/$(ARCH)
-BOOTSRC  := $(ARCHSRC)/boot
-ARCHSRCS := $(BOOTSRC)/boot.S $(ARCHSRC)/page.c
-LDSCRIPT := $(BOOTSRC)/boot.ld
+LDFLAGS   := -nostdlib
+LDFLAGS32 := $(CFLAGS32) $(LDFLAGS) -Wl,-m elf_i386
+LDFLAGS64 := $(CFLAGS64) $(LDFLAGS)
 
-INCLUDES := include 
-SRCFILES := $(ARCHSRCS) src/main.c
-OBJFILES := $(patsubst %.src,$(OUTDIR)/%.o,$(addsuffix .src,$(basename $(SRCFILES))))
-DEPFILES := $(OBJFILES:.o=.d)
+ARCH    := x86_64
+ARCHDIR := src/arch/$(ARCH)
+BOOTDIR := $(ARCHDIR)/boot
 
-KERNIMG := $(OUTDIR)/kernel.img
-SYMFILE := $(OUTDIR)/kernel.sym
+INCDIRS := include 
 
-.PHONY: all clean
+LDROUT  := $(OUTDIR)/ldr
+LDRSRCS := $(BOOTDIR)/boot.S $(BOOTDIR)/loader.c
+LDROBJS := $(patsubst %.src,$(LDROUT)/%.o,$(addsuffix .src,$(basename $(LDRSRCS))))
+LDRDEPS := $(LDROBJS:.o=.d)
+LDRSCRI := $(BOOTDIR)/boot.ld
 
-all: $(KERNIMG) $(SYMFILE)
+KRNSRCS := $(ARCHDIR)/start.S src/main.c
+KRNOBJS := $(patsubst %.src,$(OUTDIR)/%.o,$(addsuffix .src,$(basename $(KRNSRCS))))
+KRNDEPS := $(KRNOBJS:.o=.d)
+KRNSCRI := $(ARCHDIR)/kern.ld
+
+LDRNM   := ldr.img
+LDRIMG  := $(OUTDIR)/$(LDRNM)
+KRNNM   := krn.img
+KRNIMG  := $(OUTDIR)/$(KRNNM)
+
+QMUDIR  := src/qemu
+GRBCFG  := $(QMUDIR)/grub.cfg
+IMGDIR  := $(OUTDIR)/img
+QMUIMG  := $(OUTDIR)/qmu.img
+
+MKIMG   := $(QMUDIR)/img.sh
+
+.PHONY: all qemu clean
+
+all: $(LDRIMG) $(KRNIMG)
+
+qemu: $(QMUIMG)
 
 clean:
 	rm -rf $(OUTDIR)
 
-$(SYMFILE): $(KERNIMG)
-	objcopy --only-keep-debug $< $@
+$(LDRIMG): $(LDROBJS) $(LDRSCRI)
+	$(CROSSCC) $(LDFLAGS32) -T $(LDRSCRI) $(LDROBJS) -o $@
 
-$(KERNIMG): $(OBJFILES) $(LDSCRIPT)
-	$(CROSSCC) $(CFLAGS) $(LDFLAGS) -T $(LDSCRIPT) $(OBJFILES) -o $@
+$(KRNIMG): $(KRNOBJS) $(KRNSCRI)
+	$(CROSSCC) $(LDFLAGS64) -T $(KRNSCRI) $(KRNOBJS) -o $@
+
+$(QMUIMG): $(GRBCFG) $(LDRIMG) $(KRNIMG)
+	$(MKIMG) $(QMUIMG) $(IMGDIR) $(GRBCFG) $(LDRIMG) $(KRNIMG) $(LDRNM) $(KRNNM)
+
+$(LDROUT)/%.o: %.S
+	mkdir -p $(dir $@)
+	$(CROSSCC) $(CFLAGS32) $(addprefix -I,$(INCDIRS)) -c -MMD $< -o $@
+
+$(LDROUT)/%.o: %.c
+	mkdir -p $(dir $@)
+	$(CROSSCC) $(WARNINGS) $(CFLAGS32) $(addprefix -I,$(INCDIRS)) -c -MMD $< -o $@
 
 $(OUTDIR)/%.o: %.S
 	mkdir -p $(dir $@)
-	$(CROSSCC) $(CFLAGS) $(addprefix -I,$(INCLUDES)) -c -MMD $< -o $@
+	$(CROSSCC) $(CFLAGS64) $(addprefix -I,$(INCDIRS)) -c -MMD $< -o $@
 
 $(OUTDIR)/%.o: %.c
 	mkdir -p $(dir $@)
-	$(CROSSCC) $(WARNINGS) $(CFLAGS) $(addprefix -I,$(INCLUDES)) -c -MMD $< -o $@
+	$(CROSSCC) $(WARNINGS) $(CFLAGS64) $(addprefix -I,$(INCDIRS)) -c -MMD $< -o $@
 
--include $(DEPFILES)
+-include $(LDRDEPS)
+-include $(KRNDEPS)
