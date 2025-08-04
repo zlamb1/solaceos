@@ -1,4 +1,4 @@
-file out/kernel.sym
+file out/ldr.img
 
 target remote localhost:1234
 

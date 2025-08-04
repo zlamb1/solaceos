@@ -1,8 +1,22 @@
-#ifndef SOLACE_MB1_H
-#define SOLACE_MB1_H 1
+#ifndef MB1_H
+#define MB1_H 1
 
 #include <stddef.h>
 #include <stdint.h>
+
+#define MB1_INFO_FLAG_MEM              (1 << 0)
+#define MB1_INFO_FLAG_BOOT_DEV         (1 << 1)
+#define MB1_INFO_FLAG_CMDLINE          (1 << 2)
+#define MB1_INFO_FLAG_MODS             (1 << 3)
+#define MB1_INFO_FLAG_SYMS             (1 << 4)
+#define MB1_INFO_FLAG_SEC_HEADER_TABLE (1 << 5)
+#define MB1_INFO_FLAG_MMAP             (1 << 6)
+#define MB1_INFO_FLAG_DRIVES           (1 << 7)
+#define MB1_INFO_FLAG_CFG_TABLE        (1 << 8)
+#define MB1_INFO_FLAG_BOOTLOADER_NAME  (1 << 9)
+#define MB1_INFO_FLAG_APM_TABLE        (1 << 10)
+#define MB1_INFO_FLAG_VBE              (1 << 11)
+#define MB1_INFO_FLAG_FRAMEBUFFER      (1 << 12)
 
 typedef struct
 {
@@ -45,7 +59,7 @@ typedef enum
 
 typedef struct
 {
-  /* -4: size; used to skip to next entry */
+  uint32_t size;
   uint64_t base_addr;
   uint64_t length;
   uint8_t type;
@@ -97,7 +111,17 @@ typedef struct
 
 typedef struct
 {
-  uint32_t addr;
+  uint32_t control_info;
+  uint32_t mode_info;
+  uint16_t mode;
+  uint16_t interface_seg;
+  uint16_t interface_off;
+  uint16_t interface_len;
+} __attribute__ ((packed)) mb1_vbe_info_t;
+
+typedef struct
+{
+  uint64_t addr;
   uint32_t pitch;
   uint32_t width;
   uint32_t height;
@@ -125,8 +149,8 @@ typedef struct
 typedef struct
 {
   uint32_t flags;
-  uint32_t mem_upper;
   uint32_t mem_lower;
+  uint32_t mem_upper;
   uint8_t part3;
   uint8_t part2;
   uint8_t part1;
@@ -142,12 +166,7 @@ typedef struct
   uint32_t config_table;
   uint32_t boot_loader_name;
   uint32_t apm_table;
-  uint32_t vbe_control_info;
-  uint32_t vbe_mode_info;
-  uint32_t vbe_mode;
-  uint32_t vbe_interface_seg;
-  uint32_t vbe_interface_off;
-  uint32_t vbe_interface_len;
+  mb1_vbe_info_t vbe;
   mb1_framebuffer_t framebuffer;
 } __attribute__ ((packed)) mb1_info_t;
 

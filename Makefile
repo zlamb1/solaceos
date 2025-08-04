@@ -10,21 +10,25 @@ WARNINGS := \
 
 CFLAGS   := -g -ffreestanding -fno-strict-aliasing  \
 	        -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -mno-3dnow
-CFLAGS32 := $(CFLAGS) -m32
+CFLAGS32 := $(CFLAGS) -m32 -mregparm=3
 CFLAGS64 := $(CFLAGS) -mcmodel=large
 
 LDFLAGS   := -nostdlib
-LDFLAGS32 := $(CFLAGS32) $(LDFLAGS) -Wl,-m elf_i386
+LDFLAGS32 := $(CFLAGS32) $(LDFLAGS) -Wl,-melf_i386
 LDFLAGS64 := $(CFLAGS64) $(LDFLAGS)
 
+SRCDIR  := src
+
 ARCH    := x86_64
-ARCHDIR := src/arch/$(ARCH)
+ARCHDIR := $(SRCDIR)/arch/$(ARCH)
 BOOTDIR := $(ARCHDIR)/boot
 
 INCDIRS := include 
 
 LDROUT  := $(OUTDIR)/ldr
-LDRSRCS := $(BOOTDIR)/boot.S $(BOOTDIR)/loader.c
+LDRSRCS := $(BOOTDIR)/boot.S $(BOOTDIR)/loader.c $(BOOTDIR)/kprint.c \
+		   $(BOOTDIR)/div.c $(ARCHDIR)/io.c $(SRCDIR)/string.c $(SRCDIR)/vga.c \
+		   $(SRCDIR)/console.c $(SRCDIR)/print.c
 LDROBJS := $(patsubst %.src,$(LDROUT)/%.o,$(addsuffix .src,$(basename $(LDRSRCS))))
 LDRDEPS := $(LDROBJS:.o=.d)
 LDRSCRI := $(BOOTDIR)/boot.ld
@@ -44,7 +48,7 @@ GRBCFG  := $(QMUDIR)/grub.cfg
 IMGDIR  := $(OUTDIR)/img
 QMUIMG  := $(OUTDIR)/qmu.img
 
-MKIMG   := $(QMUDIR)/img.sh
+MKIMG   := $(QMUDIR)/mkimg
 
 .PHONY: all qemu clean
 

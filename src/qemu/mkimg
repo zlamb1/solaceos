@@ -13,6 +13,17 @@ cleanup() {
 trap cleanup EXIT
 
 mkdir -p $DIR
+
+# fast path
+if [ -f "$1" ]; then
+    sudo losetup -P /dev/loop0 $1
+    sudo mount /dev/loop0p1 $DIR 
+    sudo cp $3 ${DIR}/boot/grub/grub.cfg
+    sudo cp $4 ${DIR}/boot/$6
+    sudo cp $5 ${DIR}/boot/$7
+    exit 0
+fi
+
 dd if=/dev/zero of=$1 bs=20MiB count=1
 parted -s $1 mklabel msdos mkpart primary ext2 2MiB 18MiB
 sudo losetup -P /dev/loop0 $1

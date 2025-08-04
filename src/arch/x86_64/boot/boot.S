@@ -17,6 +17,8 @@
 
 .extern _LDR_STACK_START
 
+.extern lmain
+
 mb1_magic: 
     .long MB1_MAGIC
 mb1_flags:
@@ -41,15 +43,6 @@ mb1_depth:
     .long 0
 
 clr:
-    mov $0xB8000, %ecx
-1:
-    cmp $0xB8FA0, %ecx
-    jge 2f
-    movb $0, (%ecx)
-    movb $BG_FG, 1(%ecx)
-    add $2, %ecx
-    jmp 1b
-2:
     ret
 
 puts:
@@ -75,7 +68,6 @@ start:
 
     cld
     mov $early_boot_msg, %esi
-    call puts
 
     lgdt gdtr
     ljmp $0x8, $set_cs
@@ -88,7 +80,10 @@ set_cs:
     mov %ax, %gs
     mov %ax, %ss
 
-    mov $3, %ax
+    # pass mb1 info
+    mov %ebx, %eax
+    cld
+    jmp lmain
 
 loop:
     hlt

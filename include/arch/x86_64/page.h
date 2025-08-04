@@ -1,5 +1,5 @@
-#ifndef SOLACE_X86_64_PAGE_H
-#define SOLACE_X86_64_PAGE_H 1
+#ifndef X86_64_PAGE_H
+#define X86_64_PAGE_H 1
 
 #include <stdint.h>
 
