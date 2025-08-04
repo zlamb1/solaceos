@@ -15,7 +15,7 @@
 .extern _MB1_LOAD_END_ADDR
 .extern _MB1_BSS_END_ADDR
 
-.extern _LDR_STACK_START
+.extern _LDR_STACK_END
 
 .extern lmain
 
@@ -62,7 +62,7 @@ start:
     cmp $0x2BADB002, %eax
     jne mb1_fail
 
-    mov $_LDR_STACK_START, %esp
+    mov $_LDR_STACK_END, %esp
 
     call clr
 

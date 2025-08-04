@@ -22,13 +22,15 @@ SRCDIR  := src
 ARCH    := x86_64
 ARCHDIR := $(SRCDIR)/arch/$(ARCH)
 BOOTDIR := $(ARCHDIR)/boot
+LDRDIR  := $(SRCDIR)/ldr
 
 INCDIRS := include 
 
 LDROUT  := $(OUTDIR)/ldr
-LDRSRCS := $(BOOTDIR)/boot.S $(BOOTDIR)/loader.c $(BOOTDIR)/kprint.c \
-		   $(BOOTDIR)/div.c $(ARCHDIR)/io.c $(SRCDIR)/string.c $(SRCDIR)/vga.c \
-		   $(SRCDIR)/console.c $(SRCDIR)/print.c
+LDRSRCS := $(BOOTDIR)/boot.S  $(BOOTDIR)/div.c $(LDRDIR)/memblock.c \
+		   $(ARCHDIR)/io.c $(LDRDIR)/loader.c $(LDRDIR)/kprint.c $(LDRDIR)/mmap.c $(LDRDIR)/fail.c \
+		   $(SRCDIR)/string.c $(SRCDIR)/vga.c $(SRCDIR)/console.c $(SRCDIR)/print.c $(SRCDIR)/sort.c \
+		   $(SRCDIR)/memblock.c
 LDROBJS := $(patsubst %.src,$(LDROUT)/%.o,$(addsuffix .src,$(basename $(LDRSRCS))))
 LDRDEPS := $(LDROBJS:.o=.d)
 LDRSCRI := $(BOOTDIR)/boot.ld

@@ -1,12 +1,12 @@
 #include <stdint.h>
 
-uint64_t __udivdi3 (uint64_t a, uint64_t b);
-uint64_t __umoddi3 (uint64_t a, uint64_t b);
+unsigned long long __udivdi3 (unsigned long long a, unsigned long long b);
+unsigned long long __umoddi3 (unsigned long long a, unsigned long long b);
 
-uint64_t
-__udivdi3 (uint64_t n, uint64_t d)
+unsigned long long
+__udivdi3 (unsigned long long n, unsigned long long d)
 {
-  uint64_t q, r;
+  unsigned long long q, r;
   if (d == 0)
     /* trigger exception */
     return (uint32_t) n / (uint32_t) d;
@@ -24,19 +24,19 @@ __udivdi3 (uint64_t n, uint64_t d)
       if (r >= d)
         {
           r -= d;
-          q |= (1 << i);
+          q |= (1LLU << i);
         }
     }
   return q;
 }
 
-uint64_t
-__umoddi3 (uint64_t n, uint64_t d)
+unsigned long long
+__umoddi3 (unsigned long long n, unsigned long long d)
 {
-  uint64_t q, r;
+  unsigned long long q, r;
   if (d == 0)
     /* trigger exception */
-    return (uint32_t) n / (uint32_t) d;
+    return (unsigned long) n / (unsigned long) d;
   if (d > n)
     return n;
   else if (d == n)
@@ -51,7 +51,7 @@ __umoddi3 (uint64_t n, uint64_t d)
       if (r >= d)
         {
           r -= d;
-          q |= (1 << i);
+          q |= (1LLU << i);
         }
     }
   return r;

@@ -29,13 +29,9 @@ memmove (void *dst, const void *src, size_t n)
   unsigned char *d = (unsigned char *) dst;
   const unsigned char *s = (const unsigned char *) src;
   if ((uintptr_t) src < (uintptr_t) dst)
-    {
-      while (n--)
-        d[n] = s[n];
-    }
+    while (n--)
+      d[n] = s[n];
   else
-    {
-      while (n--)
-        *d++ = *s++;
-    }
+    while (n--)
+      *d++ = *s++;
 }

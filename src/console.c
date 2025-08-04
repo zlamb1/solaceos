@@ -71,7 +71,7 @@ console_advance (console_t *con)
   uint32_t x = con->x, y = con->y;
   if (++x >= con->w)
     {
-      x = 0;
+      con->x = 0;
       console_newline (con);
     }
   else

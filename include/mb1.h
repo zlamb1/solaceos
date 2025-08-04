@@ -55,6 +55,7 @@ typedef enum
   MB1_MMAP_ENTRY_TYPE_ACPI = 3,
   MB1_MMAP_ENTRY_TYPE_RESERVED = 4,
   MB1_MMAP_ENTRY_TYPE_BAD_RAM = 5,
+  MB1_MMAP_ENTRY_TYPE_MAX = 6
 } mb1_mmap_entry_type_t;
 
 typedef struct

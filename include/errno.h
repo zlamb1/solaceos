@@ -4,5 +4,7 @@
 #define EINVAL  1
 #define ENOTSUP 2
 #define ENOSYS  3
+#define ENOMEM  4
+#define ENOENT  5
 
 #endif

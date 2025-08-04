@@ -484,7 +484,7 @@ end_prec:
           if (start < size)
             memmove (buf + start, buf + precursor,
                      MIN ((size_t) slen, size - start));
-          for (size_t i = precursor; i < pad && i < size; i++)
+          for (size_t i = precursor; i < precursor + pad && i < size; i++)
             buf[i] = ' ';
           cursor = MIN (start + slen, size);
         }

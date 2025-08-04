@@ -1,6 +1,3 @@
-#include <stdarg.h>
-
-#include "console.h"
 #include "kprint.h"
 #include "print.h"
 
@@ -26,17 +23,25 @@ initprint (console_t *con)
 }
 
 int
-kprintf (const char *fmt, ...)
+kvprintf (const char *fmt, va_list args)
 {
   int len;
-  va_list args;
   char tmp[PREALLOC];
-  va_start (args, fmt);
   len = kvsnprintf (tmp, PREALLOC, fmt, args);
   if (len > PREALLOC)
     len = PREALLOC - 1;
   for (int i = 0; i < len; i++)
     console_putchar (console, tmp[i]);
+  return len;
+}
+
+int
+kprintf (const char *fmt, ...)
+{
+  int len;
+  va_list args;
+  va_start (args, fmt);
+  len = kvprintf (fmt, args);
   va_end (args);
   return len;
 }

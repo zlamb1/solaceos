@@ -1,24 +1,18 @@
 #include "kprint.h"
+#include "loader/boot.h"
+#include "loader/fail.h"
+#include "loader/mmap.h"
 #include "mb1.h"
 #include "string.h"
 #include "vga.h"
-
-#define ROWS 80
 
 void __attribute__ ((noreturn)) lmain (mb1_info_t *mb1_info);
 
 static vga_console_t vga;
 
 static mb1_mod_t *kern_mod;
-static uint64_t max_addr = 0;
 
-static void
-fail (void)
-{
-  /* TODO: allow timeout */
-  for (;;)
-    ;
-}
+static boot_info_t boot_info;
 
 static mb1_mod_t *
 find_kernel_module (mb1_info_t *mb1_info)
@@ -36,30 +30,22 @@ find_kernel_module (mb1_info_t *mb1_info)
   return NULL;
 }
 
-static void
-iterate_mmap (mb1_info_t *mb1_info)
+/*static void
+get_reserved_space (void)
 {
-  uintptr_t addr = mb1_info->mmap_addr;
-  mb1_mmap_entry_t *mmap_entry;
-  if (!(mb1_info->flags & MB1_INFO_FLAG_MMAP))
+  uint64_t reserved_space = 0, npages, mod;
+  npages = boot_info.max_physical_addr / 4096;
+  if (boot_info.max_physical_addr % 4096)
+    ++npages;
+  for (int i = 0; i < 4; i++)
     {
-      kprintf ("Solace32: Boot Failed: No Memory Map Available\n");
-      fail ();
+      mod = npages % 512;
+      npages >>= 9;
+      if (mod)
+        ++npages;
+      reserved_space += npages << 12;
     }
-  if (mb1_info->mmap_addr < 4)
-    {
-      kprintf ("Solace32: Boot Failed: Multiboot1 Invalid Memory Map\n");
-      fail ();
-    }
-  while (addr < mb1_info->mmap_addr + mb1_info->mmap_size)
-    {
-      mmap_entry = (mb1_mmap_entry_t *) addr;
-      if (mmap_entry->type == MB1_MMAP_ENTRY_TYPE_FREE
-          && mmap_entry->base_addr + mmap_entry->length > max_addr)
-        max_addr = mmap_entry->base_addr + mmap_entry->length;
-      addr += mmap_entry->size + 4;
-    }
-}
+}*/
 
 void
 lmain (mb1_info_t *mb1_info)
@@ -74,14 +60,14 @@ lmain (mb1_info_t *mb1_info)
                               mb1_fb->height, mb1_fb->pitch);
       initprint (&vga.base);
     }
-  kprintf ("Solace32: Loader Entry\n");
+  kprintf ("Solace32: Entering Loader\n");
   if ((kern_mod = find_kernel_module (mb1_info)) == NULL)
     {
-      kprintf ("Solace32: Boot Failed: Failed to Locate x64 Kernel Module\n");
-      fail ();
+      fail ("Solace32: Boot Failed: Failed to Locate x64 Kernel Module\n");
     }
-  iterate_mmap (mb1_info);
-  kprintf ("Max Address: %llu GiB\n", max_addr / (1024 * 1024 * 1024));
+  mmap (&boot_info, mb1_info);
+  // get_reserved_space ();
+  kprintf ("Solace32: Entering Kernel\n");
   for (;;)
     ;
 }

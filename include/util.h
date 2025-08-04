@@ -1,6 +1,10 @@
 #ifndef UTIL_H
 #define UTIL_H 1
 
+#ifndef MAX
+#define MAX(X, Y) ((X) > (Y) ? (X) : (Y))
+#endif
+
 #ifndef offsetof
 #define offsetof(type, member) __builtin_offsetof (type, member)
 #endif
