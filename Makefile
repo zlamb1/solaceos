@@ -35,7 +35,8 @@ LDROBJS := $(patsubst %.src,$(LDROUT)/%.o,$(addsuffix .src,$(basename $(LDRSRCS)
 LDRDEPS := $(LDROBJS:.o=.d)
 LDRSCRI := $(BOOTDIR)/boot.ld
 
-KRNSRCS := $(ARCHDIR)/start.S src/main.c
+KRNSRCS := $(ARCHDIR)/start.S $(ARCHDIR)/io.c $(SRCDIR)/kmain.c $(SRCDIR)/string.c \
+           $(SRCDIR)/console.c $(SRCDIR)/vga.c $(SRCDIR)/print.c $(SRCDIR)/kprint.c
 KRNOBJS := $(patsubst %.src,$(OUTDIR)/%.o,$(addsuffix .src,$(basename $(KRNSRCS))))
 KRNDEPS := $(KRNOBJS:.o=.d)
 KRNSCRI := $(ARCHDIR)/kern.ld
