@@ -1,8 +1,20 @@
 #ifndef UTIL_H
 #define UTIL_H 1
 
+#ifndef MIN
+#define MIN(X, Y) ((X) < (Y) ? (X) : (Y))
+#endif
+
 #ifndef MAX
 #define MAX(X, Y) ((X) > (Y) ? (X) : (Y))
+#endif
+
+#ifndef ALIGN_DOWN
+#define ALIGN_DOWN(ADDR, ALIGN) ((ADDR) / (ALIGN) * (ALIGN))
+#endif
+
+#ifndef ALIGN_UP
+#define ALIGN_UP(ADDR, ALIGN) (((ADDR) + (ALIGN) - 1) / (ALIGN) * (ALIGN))
 #endif
 
 #ifndef offsetof

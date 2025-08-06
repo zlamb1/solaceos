@@ -10,6 +10,7 @@
 #define BG_FG 0x0F
 
 .global start
+.global enter_kernel
 
 .extern _MB1_LOAD_ADDR
 .extern _MB1_LOAD_END_ADDR
@@ -94,6 +95,47 @@ mb1_fail:
     call puts
     jmp loop
 
+enter_kernel:
+    mov %eax, %cr3
+
+    mov %cr4, %eax
+    bts $5, %eax
+    mov %eax, %cr4
+
+    push %ecx
+    push %edx
+
+    mov $0xC0000080, %ecx
+    rdmsr
+    bts $8, %eax
+    wrmsr
+
+    pop %edx
+    pop %ecx
+
+    mov %cr0, %eax
+    bts $0, %eax
+    bts $31, %eax
+    mov %eax, %cr0
+
+    ljmp $0x18, $enter_kernel64
+
+.code64
+enter_kernel64:
+    mov $20, %ax
+    mov %ax, %ds
+    mov %ax, %fs
+    mov %ax, %es
+    mov %ax, %gs
+
+    shl $32, %rcx
+    mov $0xFFFFFFFF, %rax
+    andq %rax, %rdx
+    or %rdx, %rcx
+
+    mov $0xffffffff80000000, %rax
+    jmp *%rax
+
 .data
 
 early_boot_msg:
@@ -131,7 +173,7 @@ gdt_data64:
     .short 0
     .byte 0
     .byte 0b10010011
-    .byte 0b10101111
+    .byte 0b11001111
     .byte 0
 gdt_end:
 

@@ -1,7 +1,7 @@
 #include "memblock.h"
 #include "errno.h"
 
-#define MEMBLOCKS_CAP 32
+#define MEMBLOCKS_CAP 256
 
 size_t nmemblocks = 0;
 memblock_t memblocks[MEMBLOCKS_CAP];

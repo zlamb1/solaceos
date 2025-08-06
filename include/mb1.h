@@ -12,7 +12,6 @@
 #define MB1_INFO_FLAG_SEC_HEADER_TABLE (1 << 5)
 #define MB1_INFO_FLAG_MMAP             (1 << 6)
 #define MB1_INFO_FLAG_DRIVES           (1 << 7)
-#define MB1_INFO_FLAG_CFG_TABLE        (1 << 8)
 #define MB1_INFO_FLAG_BOOTLOADER_NAME  (1 << 9)
 #define MB1_INFO_FLAG_APM_TABLE        (1 << 10)
 #define MB1_INFO_FLAG_VBE              (1 << 11)
@@ -160,9 +159,9 @@ typedef struct
   uint32_t mods_count;
   uint32_t mods_addr;
   mb1_syms_t syms;
-  uint32_t mmap_size;
+  uint32_t mmap_length;
   uint32_t mmap_addr;
-  uint32_t drives_size;
+  uint32_t drives_length;
   uint32_t drives_addr;
   uint32_t config_table;
   uint32_t boot_loader_name;

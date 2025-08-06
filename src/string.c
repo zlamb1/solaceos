@@ -2,6 +2,15 @@
 
 #include "string.h"
 
+size_t
+strlen (const char *s)
+{
+  size_t len;
+  for (len = 0; s[len]; len++)
+    ;
+  return len;
+}
+
 int
 strcmp (const char *s1, const char *s2)
 {
@@ -21,6 +30,14 @@ memcpy (void *restrict dst, const void *restrict src, size_t n)
   const char *restrict s = (const char *restrict) src;
   for (size_t i = 0; i < n; i++)
     d[i] = s[i];
+}
+
+void
+memset (void *dst, int value, size_t n)
+{
+  char *d = (char *) dst;
+  for (size_t i = 0; i < n; i++)
+    d[i] = (char) value;
 }
 
 void

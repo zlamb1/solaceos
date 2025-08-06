@@ -5,6 +5,8 @@ SECTIONS
     _LDR_LMA = 0x100000;
 
     . = _LDR_LMA;
+    
+    _LDR_START = .;
 
     .boot ALIGN(0x1000) :
     {
@@ -35,17 +37,19 @@ SECTIONS
 
     .bss ALIGN(0x1000) :
     {
-        _KERN_BSS_START = .;
+        _LDR_BSS_START = .;
         *(.bss)
-        _KERN_BSS_END = .;
+        _LDR_BSS_END = .;
     }
 
     .stack ALIGN(0x1000) :
     {
         _LDR_STACK_START = .;
-        . += 0x1000;
+        . += 0x4000;
         _LDR_STACK_END = .;
     }
+
+    _LDR_END = .;
 
     _MB1_LOAD_ADDR = _LDR_BOOT_START;
     _MB1_LOAD_END_ADDR = _LDR_DATA_END;

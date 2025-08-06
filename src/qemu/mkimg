@@ -21,6 +21,7 @@ if [ -f "$1" ]; then
     sudo cp $3 ${DIR}/boot/grub/grub.cfg
     sudo cp $4 ${DIR}/boot/$6
     sudo cp $5 ${DIR}/boot/$7
+    sync
     exit 0
 fi
 

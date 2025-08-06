@@ -1,8 +1,8 @@
-file out/ldr.img
+file out/krn.img
 
 target remote localhost:1234
 
 layout reg
 
-b start
+b kmain
 c

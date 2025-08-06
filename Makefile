@@ -27,8 +27,8 @@ LDRDIR  := $(SRCDIR)/ldr
 INCDIRS := include 
 
 LDROUT  := $(OUTDIR)/ldr
-LDRSRCS := $(BOOTDIR)/boot.S  $(BOOTDIR)/div.c $(LDRDIR)/memblock.c \
-		   $(ARCHDIR)/io.c $(LDRDIR)/loader.c $(LDRDIR)/kprint.c $(LDRDIR)/mmap.c $(LDRDIR)/fail.c \
+LDRSRCS := $(BOOTDIR)/boot.S  $(BOOTDIR)/div.c $(ARCHDIR)/elf.c $(ARCHDIR)/io.c $(ARCHDIR)/paging.c \
+		   $(LDRDIR)/memblock.c $(LDRDIR)/loader.c $(LDRDIR)/kprint.c $(LDRDIR)/mmap.c $(LDRDIR)/fail.c \
 		   $(SRCDIR)/string.c $(SRCDIR)/vga.c $(SRCDIR)/console.c $(SRCDIR)/print.c $(SRCDIR)/sort.c \
 		   $(SRCDIR)/memblock.c
 LDROBJS := $(patsubst %.src,$(LDROUT)/%.o,$(addsuffix .src,$(basename $(LDRSRCS))))
