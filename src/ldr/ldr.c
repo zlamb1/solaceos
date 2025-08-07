@@ -10,7 +10,9 @@
 #include "util.h"
 #include "vga.h"
 
+#ifndef VADDR
 #define VADDR 0xffff800000000000
+#endif
 
 extern char _LDR_START;
 extern char _LDR_END;
@@ -152,7 +154,8 @@ setup_mb1_info (mb1_info_t *mb1_info, mb1_info_t *new_mb1_info,
   if (mb1_info->flags & MB1_INFO_FLAG_FRAMEBUFFER
       && mb1_info->framebuffer.type == MB1_FRAMEBUFFER_TYPE_INDEXED)
     {
-      bi_addr = ALIGN_UP (boot_info.size, _Alignof (mb1_color_descriptor_t));
+      bi_addr
+          = ALIGN_UP (boot_info.bi.size, _Alignof (mb1_color_descriptor_t));
       if (new_mb1_info != NULL)
         {
           memcpy ((void *) bi_addr,
@@ -173,27 +176,31 @@ setup_boot_info (mb1_info_t *mb1_info)
 {
   boot_info_t *new_bi;
   mb1_info_t *new_mb1_info;
+  memblock_t *memblock;
   uint64_t tmp;
   uint32_t bi_addr, bi_off, mb1_off;
 
-  boot_info.size = 0;
+  boot_info.bi.size = 0;
 
   get_page_tables_size (&boot_info, VADDR, krn_vaddr, krn_vaddr_end);
 
-  bi_off = boot_info.size;
+  bi_off = boot_info.bi.size;
 
-  boot_info.size += sizeof (boot_info_t);
+  boot_info.bi.size += sizeof (boot_info_t);
 
-  boot_info.size = ALIGN_UP (boot_info.size, _Alignof (mb1_info_t));
-  mb1_off = boot_info.size;
-  boot_info.size += sizeof (mb1_info_t);
+  boot_info.bi.size = ALIGN_UP (boot_info.bi.size, _Alignof (mb1_info_t));
+  mb1_off = boot_info.bi.size;
+  boot_info.bi.size += sizeof (mb1_info_t);
+  boot_info.bi.size = setup_mb1_info (mb1_info, NULL, boot_info.bi.size);
+  boot_info.mb1_info.size = boot_info.bi.size - mb1_off;
 
-  boot_info.size = setup_mb1_info (mb1_info, NULL, boot_info.size);
+  boot_info.bi.size = ALIGN_UP (boot_info.bi.size, 4096);
 
-  if (krn_vaddr < VADDR + boot_info.size && krn_vaddr_end > VADDR)
+  if (krn_vaddr < VADDR + boot_info.bi.size && krn_vaddr_end > VADDR)
     fail ("Boot Information Overlaps Kernel In Virtual Address Space");
 
-  if (memblock_allocate (&tmp, boot_info.size, MEMBLOCK_ALLOC_FLAG_BELOW_4G))
+  if (memblock_allocate (&tmp, boot_info.bi.size,
+                         MEMBLOCK_ALLOC_FLAG_BELOW_4G))
     fail ("Failed To Allocate Space For Boot Info Structure");
 
   bi_addr = tmp;
@@ -201,19 +208,28 @@ setup_boot_info (mb1_info_t *mb1_info)
   setup_page_tables (&boot_info, bi_addr, krn_paddr);
 
   new_bi = (boot_info_t *) (uintptr_t) (bi_addr + bi_off);
-  new_bi->size = boot_info.size;
-  new_bi->max_physical_addr = boot_info.max_physical_addr;
-  new_bi->ldr.addr = (uintptr_t) &_LDR_START + VADDR;
+  memcpy (new_bi, &boot_info, sizeof (boot_info_t));
+
+  new_bi->bi.addr = VADDR + bi_addr;
+  new_bi->ldr.addr = VADDR + (uintptr_t) &_LDR_START;
   new_bi->ldr.size = (uintptr_t) &_LDR_END - (uintptr_t) &_LDR_START;
   new_bi->krn.addr = krn_vaddr;
   new_bi->krn.size = krn_vaddr_end - krn_vaddr;
-  memcpy (new_bi->pt, boot_info.pt,
-          sizeof (boot_page_table_t) * PAGE_TABLE_DEPTH);
+
   for (int i = 0; i < PAGE_TABLE_DEPTH; i++)
     new_bi->pt[i].pt_seg.addr += bi_addr + VADDR;
-  new_bi->mode = boot_info.mode;
-  new_bi->mb1_info.addr = bi_addr + mb1_off + VADDR;
-  new_bi->mb1_info.size = boot_info.size - mb1_off;
+
+  for (int i = 0; i < PAGE_TABLE_DEPTH; i++)
+    new_bi->ipt[i].pt_seg.addr += bi_addr + VADDR;
+
+  for (int i = 0; i < PAGE_TABLE_DEPTH; i++)
+    new_bi->kpt[i].pt_seg.addr += bi_addr + VADDR;
+
+  memblock = memblocks_iterate (NULL);
+  new_bi->memblocks.addr = VADDR + (uintptr_t) memblock;
+  new_bi->memblocks.size = sizeof (memblock_t) * memblocks_get_size ();
+
+  new_bi->mb1_info.addr = VADDR + bi_addr + mb1_off;
 
   new_mb1_info = (mb1_info_t *) (bi_addr + mb1_off);
 

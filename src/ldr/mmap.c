@@ -86,9 +86,10 @@ mmap (boot_info_t *boot_info, mb1_info_t *mb1_info)
 void
 print_mmap (void)
 {
-  for (size_t i = 0; i < nmemblocks; i++)
+  memblock_t *memblock = NULL;
+
+  while ((memblock = memblocks_iterate (memblock)) != NULL)
     {
-      memblock_t *memblock = memblocks + i;
       storage_unit_t start = get_storage_unit (memblock->start),
                      end = get_storage_unit (memblock->end);
       kprintf ("Solace32: Memblock: [ %4llu %s -> %4llu %s, Type=%-9s ]\n",

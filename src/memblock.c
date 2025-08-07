@@ -26,17 +26,17 @@ int
 memblock_reserve (uint64_t start, uint64_t end, memblock_type_t type,
                   int flags)
 {
+  memblock_t *memblock = NULL;
+  memblock_event_t evts[(memblocks_get_size () << 1) + 2];
   uint64_t pos = 0, reserved_length = 0;
   int nevts = 0, active_type = -1;
-  memblock_event_t evts[(nmemblocks << 1) + 2];
   unsigned char types[MEMBLOCK_TYPE_MAX] = { 0 };
   if (start >= end || type >= MEMBLOCK_TYPE_MAX)
     return -EINVAL;
   if (!memblock_has_capacity ())
     return -ENOMEM;
-  for (size_t i = 0; i < nmemblocks; i++)
+  while ((memblock = memblocks_iterate (memblock)) != NULL)
     {
-      memblock_t *memblock = memblocks + i;
       evts[nevts++]
           = (memblock_event_t){ .value = memblock->start,
                                 .type = memblock->type,
@@ -56,7 +56,7 @@ memblock_reserve (uint64_t start, uint64_t end, memblock_type_t type,
     .evt_type = MEMBLOCK_EVT_TYPE_END
   };
   ssort (evts, nevts, sizeof (memblock_event_t), memblock_event_cmp);
-  nmemblocks = 0;
+  memblocks_clear ();
   for (int i = 0; i < nevts; i++)
     {
       memblock_event_t evt = evts[i];
@@ -110,13 +110,14 @@ memblock_reserve (uint64_t start, uint64_t end, memblock_type_t type,
 int
 memblock_allocate (uint64_t *start, uint64_t size, int flags)
 {
+  memblock_t *memblock = NULL;
   int result;
   if (start == NULL)
     return -EINVAL;
   size = (size + 4095) >> 12 << 12;
-  for (size_t cur = 0; cur < nmemblocks; cur++)
+
+  while ((memblock = memblocks_iterate (memblock)) != NULL)
     {
-      memblock_t *memblock = memblocks + cur;
       uint64_t block_start = memblock->start, block_end = memblock->end;
       if (memblock->type != MEMBLOCK_TYPE_FREE
           || size > block_end - block_start)
@@ -142,5 +143,6 @@ memblock_allocate (uint64_t *start, uint64_t size, int flags)
       *start = block_start;
       return 0;
     }
+
   return -ENOMEM;
 }

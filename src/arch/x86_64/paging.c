@@ -33,9 +33,9 @@ _get_page_tables_size (boot_info_t *bi, boot_page_table_t *bpts,
           pt->pt_seg.size = 4096;
           continue;
         }
-      pt->pt_seg.addr = bi->size;
+      pt->pt_seg.addr = bi->bi.size;
       pt->pt_seg.size = ALIGN_UP (pt->pt_nument + pt->pt_off, 512) << 3;
-      bi->size += pt->pt_seg.size;
+      bi->bi.size += pt->pt_seg.size;
     }
 }
 
@@ -48,8 +48,8 @@ get_page_tables_size (boot_info_t *bi, uint64_t p_vaddr, uint64_t krn_vaddr,
   if (p_vaddr & 4095)
     fail ("Virtual Address Must Be Page Aligned");
 
-  root_pt_addr = bi->size;
-  bi->size += 4096;
+  root_pt_addr = bi->bi.size;
+  bi->bi.size += 4096;
 
   /* TODO: check if any of these virtual address ranges step on each other */
   _get_page_tables_size (bi, &bi->pt[0], bi->max_physical_addr, p_vaddr,

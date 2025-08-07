@@ -23,14 +23,19 @@ typedef struct
 {
   /* [start, end) */
   uint64_t start, end;
-  unsigned char type;
+  uint8_t type;
+  uint8_t pad[7];
 } memblock_t;
 
-extern size_t nmemblocks;
-extern memblock_t memblocks[];
+memblock_t *memblocks_iterate (memblock_t *memblock);
+
+size_t memblocks_get_size (void);
 
 int memblock_has_capacity (void);
+
 int memblock_append (uint64_t start, uint64_t end, memblock_type_t type);
+
+void memblocks_clear (void);
 
 /**
  * @Returns: < 0: Failure
