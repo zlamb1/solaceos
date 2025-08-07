@@ -29,6 +29,17 @@ kvprintf (const char *fmt, va_list args)
 {
   int len;
   char tmp[PREALLOC];
+  if (fmt[0] == -64)
+    {
+      console_color_t fg = console->fg;
+      console->setfg (console, (console_color_t){
+                                   .type = CONSOLE_COLOR_TYPE_ANSI,
+                                   .ansi = ANSI_COLOR_GREEN,
+                               });
+      kprintf ("solace: ");
+      console->setfg (console, fg);
+      fmt++;
+    }
   len = kvsnprintf (tmp, PREALLOC, fmt, args);
   if (len > PREALLOC)
     len = PREALLOC - 1;

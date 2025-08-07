@@ -5,6 +5,8 @@
 
 #include "console.h"
 
+#define KPRINT_INFO "\xC0"
+
 void initprint (console_t *con);
 
 int kvprintf (const char *fmt, va_list args);

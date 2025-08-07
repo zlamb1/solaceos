@@ -25,20 +25,18 @@ palloc_init (boot_info_t *bi)
   memblock = (memblock_t *) bi->memblocks.addr;
   for (size_t i = 0; i < nmemblocks; i++, memblock++)
     {
-      uint64_t addr;
+      uint64_t addr, size;
       if (memblock->type != MEMBLOCK_TYPE_FREE)
         continue;
       addr = ALIGN_UP (memblock->start, 4096);
-      if (addr > memblock->end || memblock->end - addr < 4096)
+      if (addr > memblock->end)
         continue;
-      while (addr < memblock->end)
-        {
-          free_page ((void *) (addr + VADDR));
-          npages++;
-          addr += 4096;
-        }
+      size = (memblock->end - addr) >> 12;
+      npages += size;
+      for (size_t p = 0; p < size; p++, addr += 4096)
+        free_page ((void *) (addr + VADDR));
     }
-  kprintf ("Solace: Initialized %zu Pages\n", npages);
+  kprintf (KPRINT_INFO "Initialized %zu Pages\n", npages);
 }
 
 void *

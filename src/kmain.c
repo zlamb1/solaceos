@@ -8,7 +8,7 @@ void
 kmain (boot_info_t *bi)
 {
   initprint (get_static_console (bi->boot_mode));
-  kprintf ("Solace: Booting...\n");
+  kprintf (KPRINT_INFO "Booting...\n");
   palloc_init (bi);
   for (;;)
     ;
