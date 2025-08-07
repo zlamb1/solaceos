@@ -21,25 +21,25 @@ SRCDIR  := src
 
 ARCH    := x86_64
 ARCHDIR := $(SRCDIR)/arch/$(ARCH)
-BOOTDIR := $(ARCHDIR)/boot
+BOOTDIR := $(ARCHDIR)/ldr
 LDRDIR  := $(SRCDIR)/ldr
 
 INCDIRS := include 
 
 LDROUT  := $(OUTDIR)/ldr
-LDRSRCS := $(BOOTDIR)/boot.S  $(BOOTDIR)/div.c $(ARCHDIR)/elf.c $(ARCHDIR)/io.c $(ARCHDIR)/paging.c \
-		   $(LDRDIR)/memblock.c $(LDRDIR)/loader.c $(LDRDIR)/kprint.c $(LDRDIR)/mmap.c $(LDRDIR)/fail.c \
+LDRSRCS := $(BOOTDIR)/ldr.S  $(BOOTDIR)/div.c $(ARCHDIR)/elf.c $(ARCHDIR)/io.c $(ARCHDIR)/paging.c \
+		   $(LDRDIR)/memblock.c $(LDRDIR)/ldr.c $(LDRDIR)/kprint.c $(LDRDIR)/mmap.c $(LDRDIR)/fail.c \
 		   $(SRCDIR)/string.c $(SRCDIR)/vga.c $(SRCDIR)/console.c $(SRCDIR)/print.c $(SRCDIR)/sort.c \
 		   $(SRCDIR)/memblock.c
 LDROBJS := $(patsubst %.src,$(LDROUT)/%.o,$(addsuffix .src,$(basename $(LDRSRCS))))
 LDRDEPS := $(LDROBJS:.o=.d)
-LDRSCRI := $(BOOTDIR)/boot.ld
+LDRSCRI := $(BOOTDIR)/ldr.ld
 
-KRNSRCS := $(ARCHDIR)/start.S $(ARCHDIR)/io.c $(SRCDIR)/kmain.c $(SRCDIR)/string.c \
+KRNSRCS := $(ARCHDIR)/io.c $(SRCDIR)/kmain.c $(SRCDIR)/string.c \
            $(SRCDIR)/console.c $(SRCDIR)/vga.c $(SRCDIR)/print.c $(SRCDIR)/kprint.c
 KRNOBJS := $(patsubst %.src,$(OUTDIR)/%.o,$(addsuffix .src,$(basename $(KRNSRCS))))
 KRNDEPS := $(KRNOBJS:.o=.d)
-KRNSCRI := $(ARCHDIR)/kern.ld
+KRNSCRI := $(ARCHDIR)/krn.ld
 
 LDRNM   := ldr.img
 LDRIMG  := $(OUTDIR)/$(LDRNM)

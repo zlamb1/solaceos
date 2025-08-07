@@ -1,9 +1,9 @@
 #include "elf.h"
 #include "kprint.h"
-#include "loader/boot.h"
-#include "loader/fail.h"
-#include "loader/mmap.h"
-#include "loader/paging.h"
+#include "ldr/boot.h"
+#include "ldr/fail.h"
+#include "ldr/mmap.h"
+#include "ldr/paging.h"
 #include "mb1.h"
 #include "memblock.h"
 #include "string.h"
@@ -11,18 +11,6 @@
 #include "vga.h"
 
 #define VADDR 0xffff800000000000
-
-#define MB1_CMDLINE_OFFSET         0
-#define MB1_MODS_OFFSET            1
-#define MB1_MODS_CMDLINE_OFFSET    2
-#define MB1_SYMS_OFFSET            3
-#define MB1_MMAP_OFFSET            4
-#define MB1_DRIVES_OFFSET          5
-#define MB1_BOOTLOADER_NAME_OFFSET 6
-#define MB1_APM_TABLE_OFFSET       7
-#define MB1_VBE_OFFSET             8
-#define MB1_FRAMEBUFFER_OFFSET     9
-#define MB1_MAX_OFFSET             10
 
 extern char _LDR_START;
 extern char _LDR_END;

@@ -1,8 +1,8 @@
-#include "loader/paging.h"
-#include "loader/boot.h"
-#include "loader/fail.h"
+#include "ldr/paging.h"
+#include "ldr/boot.h"
+#include "ldr/fail.h"
+#include "string.h"
 #include "util.h"
-#include <string.h>
 
 extern char _LDR_END;
 

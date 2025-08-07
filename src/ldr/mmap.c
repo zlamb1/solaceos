@@ -1,10 +1,10 @@
-#include "loader/mmap.h"
+#include "ldr/mmap.h"
 #include "kprint.h"
-#include "loader/boot.h"
-#include "loader/fail.h"
+#include "ldr/boot.h"
+#include "ldr/fail.h"
 #include "mb1.h"
 #include "memblock.h"
-#include <string.h>
+#include "string.h"
 
 static memblock_type_t
 get_memblock_type_from_mb1 (uint8_t type)

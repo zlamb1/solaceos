@@ -1,10 +1,42 @@
+#!/bin/bash
+
+QEMU=qemu-system-x86_64
+QEMU_FLAGS="-drive format=raw,media=disk,file=out/qmu.img -nic none -m 4G"
+GDB=gdb
+GDB_FLAGS="-x gdb/krn.gdb"
+DBG=0
+
+while getopts ":ldh" opt; do
+  case $opt in
+    l)
+      QEMU=qemu-system-i386
+      GDB_FLAGS="-x gdb/ldr.gdb"
+      ;;
+    d)
+      DBG=1
+      ;;
+    h)
+      echo "run: run [-ldh]"
+      echo
+      echo "Builds and runs loader and operating system in QEMU."
+      echo
+      echo "Options:"
+      echo "  -l        runs QEMU configuration for loader debugging"
+      echo "  -d        runs in debug mode"
+      echo "  -h        prints this message"
+      exit 0
+      ;;
+    ?)
+      echo "WARNING: unknown option '-${OPTARG}'"
+      ;;
+  esac
+done
+
 make qemu -j8
 
-if [[ $1 == 'debug' ]]; then
-        qemu-system-x86_64 -drive format=raw,media=disk,file=out/qmu.img \
-                           -nic none -m 4G -s -S &
-        gdb -x gdb/krn.gdb
+if [ "$DBG" -eq 1 ]; then
+  ${QEMU} ${QEMU_FLAGS} -s -S &
+  ${GDB} -q ${GDB_FLAGS}
 else
-        qemu-system-x86_64 -drive format=raw,media=disk,file=out/qmu.img \
-                           -nic none -m 4G
+  ${QEMU} ${QEMU_FLAGS}
 fi

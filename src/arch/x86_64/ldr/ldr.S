@@ -148,6 +148,8 @@ enter_kernel64:
     andq %rax, %rdx
     or %rdx, %rcx
 
+    cld
+
     jmp *%rcx
 
 .data
