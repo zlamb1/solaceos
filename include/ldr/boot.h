@@ -1,6 +1,7 @@
 #ifndef BOOT_H
 #define BOOT_H
 
+#include "mb1.h"
 #include <stdint.h>
 
 #ifndef VADDR
@@ -13,7 +14,18 @@
 
 typedef enum
 {
-  BOOT_MODE_MB1
+  BOOT_MODE_TYPE_MB1
+} boot_mode_type_t;
+
+typedef struct
+{
+  uint64_t type;
+  uint64_t size;
+  union
+  {
+    uint64_t addr;
+    mb1_info_t *mb1_info;
+  };
 } boot_mode_t;
 
 typedef struct
@@ -40,11 +52,7 @@ typedef struct
   boot_page_table_t ipt[PAGE_TABLE_DEPTH]; /* identity mappings */
   boot_page_table_t kpt[PAGE_TABLE_DEPTH]; /* kernel mappings */
   boot_segment_t memblocks;
-  uint64_t mode;
-  union
-  {
-    boot_segment_t mb1_info; /* location of Multiboot1 info and data */
-  };
+  boot_mode_t boot_mode;
 } boot_info_t;
 
 void __attribute__ ((noreturn))

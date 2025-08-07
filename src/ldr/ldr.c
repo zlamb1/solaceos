@@ -10,10 +10,6 @@
 #include "util.h"
 #include "vga.h"
 
-#ifndef VADDR
-#define VADDR 0xffff800000000000
-#endif
-
 extern char _LDR_START;
 extern char _LDR_END;
 
@@ -51,17 +47,7 @@ setup_mb1_info (mb1_info_t *mb1_info, mb1_info_t *new_mb1_info,
                 uint32_t bi_addr)
 {
   if (new_mb1_info != NULL)
-    {
-      new_mb1_info->flags = mb1_info->flags;
-      new_mb1_info->mem_lower = mb1_info->mem_lower;
-      new_mb1_info->mem_upper = mb1_info->mem_upper;
-      new_mb1_info->part3 = mb1_info->part3;
-      new_mb1_info->part2 = mb1_info->part2;
-      new_mb1_info->part1 = mb1_info->part1;
-      new_mb1_info->drive = mb1_info->drive;
-      new_mb1_info->vbe = mb1_info->vbe;
-      new_mb1_info->framebuffer = mb1_info->framebuffer;
-    }
+    memcpy (new_mb1_info, mb1_info, sizeof (mb1_info_t));
 
   if (mb1_info->flags & MB1_INFO_FLAG_CMDLINE)
     {
@@ -77,14 +63,16 @@ setup_mb1_info (mb1_info_t *mb1_info, mb1_info_t *new_mb1_info,
   bi_addr = ALIGN_UP (bi_addr, _Alignof (mb1_mod_t));
   if (new_mb1_info != NULL)
     {
+      uint32_t mods_addr;
       memcpy ((void *) bi_addr, (const void *) mb1_info->mods_addr,
               sizeof (mb1_mod_t) * mb1_info->mods_count);
+      mods_addr = bi_addr;
       new_mb1_info->mods_addr = bi_addr;
       new_mb1_info->mods_count = mb1_info->mods_count;
       bi_addr += sizeof (mb1_mod_t) * mb1_info->mods_count;
       for (size_t i = 0; i < new_mb1_info->mods_count; i++)
         {
-          mb1_mod_t *mod = (mb1_mod_t *) new_mb1_info->mods_addr + i;
+          mb1_mod_t *mod = (mb1_mod_t *) mods_addr + i;
           int len = strlen ((const char *) mod->string) + 1;
           memcpy ((void *) bi_addr, (const void *) mod->string, len);
           mod->string = bi_addr;
@@ -188,11 +176,12 @@ setup_boot_info (mb1_info_t *mb1_info)
 
   boot_info.bi.size += sizeof (boot_info_t);
 
+  boot_info.boot_mode.type = BOOT_MODE_TYPE_MB1;
   boot_info.bi.size = ALIGN_UP (boot_info.bi.size, _Alignof (mb1_info_t));
   mb1_off = boot_info.bi.size;
   boot_info.bi.size += sizeof (mb1_info_t);
   boot_info.bi.size = setup_mb1_info (mb1_info, NULL, boot_info.bi.size);
-  boot_info.mb1_info.size = boot_info.bi.size - mb1_off;
+  boot_info.boot_mode.size = boot_info.bi.size - mb1_off;
 
   boot_info.bi.size = ALIGN_UP (boot_info.bi.size, 4096);
 
@@ -229,7 +218,7 @@ setup_boot_info (mb1_info_t *mb1_info)
   new_bi->memblocks.addr = VADDR + (uintptr_t) memblock;
   new_bi->memblocks.size = sizeof (memblock_t) * memblocks_get_size ();
 
-  new_bi->mb1_info.addr = VADDR + bi_addr + mb1_off;
+  new_bi->boot_mode.addr = VADDR + bi_addr + mb1_off;
 
   new_mb1_info = (mb1_info_t *) (bi_addr + mb1_off);
 

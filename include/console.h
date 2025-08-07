@@ -1,3 +1,4 @@
+#include "ldr/boot.h"
 #ifndef CONSOLE_H
 #define CONSOLE_H 1
 
@@ -50,6 +51,8 @@ typedef struct console_t
 } console_t;
 
 extern console_t *console;
+
+console_t *get_static_console (boot_mode_t boot_mode);
 
 console_t null_console_init (void);
 
