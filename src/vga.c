@@ -7,7 +7,8 @@
 #include "util.h"
 #include "vga.h"
 
-#define COLOR(fg, bg) (fg & 0xF) | (bg << 4)
+#define COLOR(fg, bg)                                                         \
+  ansi_to_vga_text_mode_0[fg & 0xF] | (ansi_to_vga_text_mode_0[bg & 0xF] << 4)
 
 #define MISC_OUTPUT_READ_REG     0x3CC
 #define MISC_OUTPUT_WRITE_REG    0x3C2

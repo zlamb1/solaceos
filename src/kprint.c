@@ -29,16 +29,31 @@ kvprintf (const char *fmt, va_list args)
 {
   int len;
   char tmp[PREALLOC];
-  if (fmt[0] == -64)
+  console_color_t fg = console->fg;
+  switch (fmt[0])
     {
-      console_color_t fg = console->fg;
+    case -1:
       console->setfg (console, (console_color_t){
                                    .type = CONSOLE_COLOR_TYPE_ANSI,
-                                   .ansi = ANSI_COLOR_GREEN,
+                                   .ansi = ANSI_COLOR_BRIGHT_RED,
                                });
+      goto write;
+    case -63:
+      console->setfg (console, (console_color_t){
+                                   .type = CONSOLE_COLOR_TYPE_ANSI,
+                                   .ansi = ANSI_COLOR_BRIGHT_YELLOW,
+                               });
+      goto write;
+    case -64:
+      console->setfg (console, (console_color_t){
+                                   .type = CONSOLE_COLOR_TYPE_ANSI,
+                                   .ansi = ANSI_COLOR_BRIGHT_GREEN,
+                               });
+    write:
       kprintf ("solace: ");
       console->setfg (console, fg);
       fmt++;
+      break;
     }
   len = kvsnprintf (tmp, PREALLOC, fmt, args);
   if (len > PREALLOC)

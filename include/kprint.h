@@ -6,6 +6,8 @@
 #include "console.h"
 
 #define KPRINT_INFO "\xC0"
+#define KPRINT_WARN "\xC1"
+#define KPRINT_ERR  "\xFF"
 
 void initprint (console_t *con);
 
