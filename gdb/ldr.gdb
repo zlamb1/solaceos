@@ -1,0 +1,8 @@
+file out/ldr.img
+
+target remote localhost:1234
+
+layout reg
+
+b lmain
+c

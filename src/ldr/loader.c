@@ -10,8 +10,7 @@
 #include "util.h"
 #include "vga.h"
 
-extern char _LDR_START;
-extern char _LDR_END;
+#define VADDR 0xffff800000000000
 
 #define MB1_CMDLINE_OFFSET         0
 #define MB1_MODS_OFFSET            1
@@ -25,6 +24,12 @@ extern char _LDR_END;
 #define MB1_FRAMEBUFFER_OFFSET     9
 #define MB1_MAX_OFFSET             10
 
+extern char _LDR_START;
+extern char _LDR_END;
+
+extern uint64_t gdt_start;
+extern uint64_t gdtr_offset;
+
 void __attribute__ ((noreturn)) lmain (mb1_info_t *mb1_info);
 
 static vga_console_t vga;
@@ -32,6 +37,8 @@ static mb1_mod_t *kern_mod;
 static boot_info_t boot_info;
 static uint64_t krn_vaddr = UINT64_MAX, krn_vaddr_end = 0,
                 krn_paddr = UINT64_MAX;
+
+uint64_t bi_vaddr;
 
 static mb1_mod_t *
 find_kernel_module (mb1_info_t *mb1_info)
@@ -178,12 +185,12 @@ setup_boot_info (mb1_info_t *mb1_info)
 {
   boot_info_t *new_bi;
   mb1_info_t *new_mb1_info;
-  uint64_t vaddr = 0xffff800000000000, tmp;
+  uint64_t tmp;
   uint32_t bi_addr, bi_off, mb1_off;
 
   boot_info.size = 0;
 
-  get_page_tables_size (&boot_info, vaddr, krn_vaddr, krn_vaddr_end);
+  get_page_tables_size (&boot_info, VADDR, krn_vaddr, krn_vaddr_end);
 
   bi_off = boot_info.size;
 
@@ -195,7 +202,7 @@ setup_boot_info (mb1_info_t *mb1_info)
 
   boot_info.size = setup_mb1_info (mb1_info, NULL, boot_info.size);
 
-  if (krn_vaddr < vaddr + boot_info.size && krn_vaddr_end > vaddr)
+  if (krn_vaddr < VADDR + boot_info.size && krn_vaddr_end > VADDR)
     fail ("Boot Information Overlaps Kernel In Virtual Address Space");
 
   if (memblock_allocate (&tmp, boot_info.size, MEMBLOCK_ALLOC_FLAG_BELOW_4G))
@@ -208,23 +215,26 @@ setup_boot_info (mb1_info_t *mb1_info)
   new_bi = (boot_info_t *) (uintptr_t) (bi_addr + bi_off);
   new_bi->size = boot_info.size;
   new_bi->max_physical_addr = boot_info.max_physical_addr;
-  new_bi->ldr.addr = (uintptr_t) &_LDR_START + vaddr;
+  new_bi->ldr.addr = (uintptr_t) &_LDR_START + VADDR;
   new_bi->ldr.size = (uintptr_t) &_LDR_END - (uintptr_t) &_LDR_START;
   new_bi->krn.addr = krn_vaddr;
   new_bi->krn.size = krn_vaddr_end - krn_vaddr;
   memcpy (new_bi->pt, boot_info.pt,
           sizeof (boot_page_table_t) * PAGE_TABLE_DEPTH);
   for (int i = 0; i < PAGE_TABLE_DEPTH; i++)
-    new_bi->pt[i].pt_seg.addr += bi_addr + vaddr;
+    new_bi->pt[i].pt_seg.addr += bi_addr + VADDR;
   new_bi->mode = boot_info.mode;
-  new_bi->mb1_info.addr = bi_addr + mb1_off + vaddr;
+  new_bi->mb1_info.addr = bi_addr + mb1_off + VADDR;
   new_bi->mb1_info.size = boot_info.size - mb1_off;
 
   new_mb1_info = (mb1_info_t *) (bi_addr + mb1_off);
 
   setup_mb1_info (mb1_info, new_mb1_info,
                   bi_addr + mb1_off + sizeof (mb1_info_t));
-  return bi_addr + boot_info.pt[3].pt_seg.addr;
+
+  bi_vaddr = VADDR + bi_addr + bi_off;
+
+  return bi_addr + boot_info.ipt[3].pt_seg.addr;
 }
 
 static uint64_t
@@ -359,5 +369,5 @@ lmain (mb1_info_t *mb1_info)
   print_mmap ();
 
   kprintf ("Solace32: Entering Kernel\n");
-  enter_kernel (pml4t_addr, krn_entry);
+  enter_kernel (pml4t_addr, krn_entry, bi_vaddr);
 }

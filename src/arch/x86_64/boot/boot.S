@@ -19,6 +19,7 @@
 .extern _LDR_STACK_END
 
 .extern lmain
+.extern kprintf
 
 mb1_magic: 
     .long MB1_MAGIC
@@ -96,53 +97,79 @@ mb1_fail:
     jmp loop
 
 enter_kernel:
-    mov %eax, %cr3
-
-    mov %cr4, %eax
-    bts $5, %eax
-    mov %eax, %cr4
-
     push %ecx
     push %edx
 
+    mov %cr4, %edi
+    or $32, %edi
+    mov %edi, %cr4
+
+    mov %eax, %cr3
+
+    mov %esp, %ebp
+    sub $4, %esp
+    and $-16, %esp
+
+    movl $pae_msg, (%esp)
+    call kprintf
+
     mov $0xC0000080, %ecx
     rdmsr
-    bts $8, %eax
+    or $256, %eax
     wrmsr
 
+    mov %cr0, %eax
+    or $0x80000001, %eax
+    mov %eax, %cr0
+
+    movl $paging_msg, (%esp)
+    call kprintf
+
+    mov %ebp, %esp
+    
     pop %edx
     pop %ecx
-
-    mov %cr0, %eax
-    bts $0, %eax
-    bts $31, %eax
-    mov %eax, %cr0
 
     ljmp $0x18, $enter_kernel64
 
 .code64
 enter_kernel64:
-    mov $20, %ax
+    mov $0x20, %ax
     mov %ax, %ds
     mov %ax, %fs
     mov %ax, %es
     mov %ax, %gs
+    mov %ax, %ss
 
+    movb $0x10, 0xb8001
+    
     shl $32, %rcx
     mov $0xFFFFFFFF, %rax
     andq %rax, %rdx
     or %rdx, %rcx
 
-    mov $0xffffffff80000000, %rax
-    jmp *%rax
+    jmp *%rcx
 
 .data
 
 early_boot_msg:
 .asciz "Solace32: Boot Entry"
 
+pae_msg:
+.asciz "Solace32: PAE Enabled\n"
+
+paging_msg:
+.asciz "Solace32: Paging Enabled\n"
+
+test_msg:
+.asciz "Solace32: Test: %#llb\n"
+
 mb1_fail_error:
     .asciz "Invalid Multiboot1 Signature"
+
+.align 16
+
+.global gdt_start
 
 gdt_start:    
     # null descriptor
@@ -169,13 +196,15 @@ gdt_code64:
     .byte 0b10101111
     .byte 0
 gdt_data64:
-    .short 0xFFFF
+    .short 0
     .short 0
     .byte 0
     .byte 0b10010011
-    .byte 0b11001111
+    .byte 0b11000000
     .byte 0
 gdt_end:
+
+.global gdtr_offset
 
 gdtr:
     gdtr_size: 

@@ -3,7 +3,7 @@ make qemu -j8
 if [[ $1 == 'debug' ]]; then
         qemu-system-x86_64 -drive format=raw,media=disk,file=out/qmu.img \
                            -nic none -m 4G -s -S &
-        gdb -x gdb/gdb-cmd
+        gdb -x gdb/krn.gdb
 else
         qemu-system-x86_64 -drive format=raw,media=disk,file=out/qmu.img \
                            -nic none -m 4G

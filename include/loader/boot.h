@@ -39,7 +39,7 @@ typedef struct
   };
 } boot_info_t;
 
-void __attribute__ ((noreturn)) enter_kernel (uint32_t pml4t_addr,
-                                              uint64_t krn_entry);
+void __attribute__ ((noreturn))
+enter_kernel (uint32_t pml4t_addr, uint64_t krn_entry, uint64_t bi_vaddr);
 
 #endif
