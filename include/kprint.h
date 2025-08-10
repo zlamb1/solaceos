@@ -4,10 +4,13 @@
 #include <stdarg.h>
 
 #include "console.h"
+#include "spinlock.h"
 
 #define KPRINT_INFO "\xC0"
 #define KPRINT_WARN "\xC1"
 #define KPRINT_ERR  "\xFF"
+
+extern spinlock_t console_lock;
 
 void initprint (console_t *con);
 
