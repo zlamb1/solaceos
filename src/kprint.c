@@ -31,7 +31,7 @@ initprint (console_t *con)
 int
 kvprintf (const char *fmt, va_list args)
 {
-  int len, write_prefix = 0;
+  int len = 0, tmplen, write_prefix = 0;
   char tmp[PREALLOC];
   console_color_t oldfg, newfg;
 
@@ -60,9 +60,9 @@ kvprintf (const char *fmt, va_list args)
       break;
     }
 
-  len = kvsnprintf (tmp, PREALLOC, fmt, args);
-  if (len > PREALLOC)
-    len = PREALLOC - 1;
+  tmplen = kvsnprintf (tmp, PREALLOC, fmt, args);
+  if (tmplen > PREALLOC)
+    tmplen = PREALLOC - 1;
 
   acquire_spinlock (&console_lock);
   oldfg = console->fg;
@@ -73,9 +73,11 @@ kvprintf (const char *fmt, va_list args)
       for (size_t i = 0; i < sizeof (prefix) - 1; i++)
         console_putchar (console, prefix[i]);
       console->setfg (console, oldfg);
+      len += sizeof (prefix) - 1;
     }
 
-  for (int i = 0; i < len; i++)
+  len += tmplen;
+  for (int i = 0; i < tmplen; i++)
     console_putchar (console, tmp[i]);
 
   release_spinlock (&console_lock);
