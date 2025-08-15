@@ -37,12 +37,15 @@ vga_putch (console_t *con, char ch)
 {
   vga_console_t *vga;
   uint8_t *vmem;
+
   if (con == NULL)
     return -EINVAL;
+
   vga = container_of (con, vga_console_t, base);
   vmem = (uint8_t *) (vga->fb + con->y * (con->w << 1) + (con->x << 1));
   vmem[0] = ch;
   vmem[1] = vga->color;
+
   return 0;
 }
 
@@ -50,15 +53,19 @@ int
 vga_setxy (console_t *con, uint32_t x, uint32_t y)
 {
   uint32_t pos;
+
   if (con == NULL || x >= con->w || y >= con->h)
     return -EINVAL;
+
   con->x = x;
   con->y = y;
   pos = y * 80 + x;
+
   outb (CRTC_ADDRESS_REG, CRTC_CURSOR_LOW_LOC_REG);
   outb (CRTC_DATA_REG, pos & 0xFF);
   outb (CRTC_ADDRESS_REG, CRTC_CURSOR_HIGH_LOC_REG);
   outb (CRTC_DATA_REG, (pos >> 8) & 0xFF);
+
   return 0;
 }
 
@@ -66,15 +73,20 @@ int
 vga_setfg (console_t *con, console_color_t fg)
 {
   vga_console_t *vga;
+
   if (con == NULL)
     return -EINVAL;
+
   if (fg.type != CONSOLE_COLOR_TYPE_ANSI)
     return -ENOTSUP;
+
   if (fg.ansi > 0xF)
     return -EINVAL;
+
   con->fg = fg;
   vga = container_of (con, vga_console_t, base);
   vga->color = COLOR (fg.ansi, con->bg.ansi);
+
   return 0;
 }
 
@@ -82,15 +94,20 @@ int
 vga_setbg (console_t *con, console_color_t bg)
 {
   vga_console_t *vga;
+
   if (con == NULL)
     return -EINVAL;
+
   if (bg.type != CONSOLE_COLOR_TYPE_ANSI)
     return -ENOTSUP;
+
   if (bg.ansi > 0xF)
     return -EINVAL;
+
   con->bg = bg;
   vga = container_of (con, vga_console_t, base);
   vga->color = COLOR (con->fg.ansi, bg.ansi);
+
   return 0;
 }
 
@@ -100,20 +117,25 @@ vga_scroll (console_t *con)
   vga_console_t *vga;
   size_t bytes_per_row;
   char *src, *dst;
+
   if (con == NULL)
     return -EINVAL;
+
   vga = container_of (con, vga_console_t, base);
   bytes_per_row = con->w << 1;
   src = vga->fb + vga->pitch;
   dst = vga->fb;
+
   for (uint32_t y = 1; y < con->h; y++, src += vga->pitch, dst += vga->pitch)
     memcpy (dst, src, bytes_per_row);
+
   dst = vga->fb + (con->h - 1) * vga->pitch;
   for (uint32_t x = 0; x < con->w; x++, dst += 2)
     {
       dst[0] = ' ';
       dst[1] = vga->color;
     }
+
   return 0;
 }
 
@@ -123,8 +145,10 @@ vga_clr (console_t *con)
   vga_console_t *vga;
   uint32_t y;
   char *vmem;
+
   vga = container_of (con, vga_console_t, base);
   con->setxy (con, 0, 0);
+
   for (y = 0, vmem = vga->fb; y < con->h; y++, vmem += vga->pitch)
     for (uint32_t x = 0; x < con->w; x++)
       {
@@ -132,6 +156,7 @@ vga_clr (console_t *con)
         vmem[idx] = ' ';
         vmem[idx + 1] = 0xF;
       }
+
   return 0;
 }
 
