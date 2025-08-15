@@ -4,14 +4,14 @@
 #include "print.h"
 #include "spinlock.h"
 
-#define PREALLOC 128
+#define PREALLOC       128
+#define INIT_KLOG_SIZE 1024
 
-spinlock_t console_lock = { 0 };
 static console_t null_console;
+static char init_kern_log_buf[INIT_KLOG_SIZE];
+static const char prefix[] = "SolaceOS> ";
 
-console_t *console;
-
-const char prefix[] = "SolaceOS> ";
+kern_log_t kern_log = { .log = init_kern_log_buf, .lock = SPINLOCK_INIT };
 
 void
 initprint (console_t *con)
@@ -19,11 +19,11 @@ initprint (console_t *con)
   if (con == NULL)
     {
       null_console = null_console_init ();
-      con = &null_console;
+      kern_log.console = &null_console;
     }
   else
     {
-      console = con;
+      kern_log.console = con;
       con->clr (con);
     }
 }
@@ -31,6 +31,7 @@ initprint (console_t *con)
 int
 kvprintf (const char *fmt, va_list args)
 {
+  lockflags_t flags;
   int len = 0, tmplen, write_prefix = 0;
   char tmp[PREALLOC];
   console_color_t oldfg, newfg;
@@ -64,23 +65,21 @@ kvprintf (const char *fmt, va_list args)
   if (tmplen > PREALLOC)
     tmplen = PREALLOC - 1;
 
-  acquire_spinlock (&console_lock);
-  oldfg = console->fg;
+  flags = spin_lock_irqsave (&kern_log.lock);
+  oldfg = kern_log.console->fg;
 
   if (write_prefix)
     {
-      console->setfg (console, newfg);
-      for (size_t i = 0; i < sizeof (prefix) - 1; i++)
-        console_putchar (console, prefix[i]);
-      console->setfg (console, oldfg);
+      kern_log.console->setfg (kern_log.console, newfg);
+      console_write (kern_log.console, sizeof (prefix) - 1, prefix);
+      kern_log.console->setfg (kern_log.console, oldfg);
       len += sizeof (prefix) - 1;
     }
 
   len += tmplen;
-  for (int i = 0; i < tmplen; i++)
-    console_putchar (console, tmp[i]);
+  console_write (kern_log.console, tmplen, tmp);
 
-  release_spinlock (&console_lock);
+  spin_unlock_irqrestore (&kern_log.lock, flags);
 
   return len;
 }

@@ -30,8 +30,7 @@ kvprintf (const char *fmt, va_list args)
   len = kvsnprintf (tmp, PREALLOC, fmt, args);
   if (len > PREALLOC)
     len = PREALLOC - 1;
-  for (int i = 0; i < len; i++)
-    console_putchar (console, tmp[i]);
+  console_write (console, len, tmp);
   return len;
 }
 

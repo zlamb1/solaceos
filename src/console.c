@@ -53,16 +53,16 @@ null_console_clr (console_t *con)
 console_t
 null_console_init (void)
 {
-  return (console_t){ .x = 0,
-                      .y = 0,
-                      .w = 0,
-                      .h = 0,
-                      .putch = null_console_putch,
-                      .setxy = null_console_setxy,
-                      .setfg = null_console_setfg,
-                      .setbg = null_console_setbg,
-                      .scroll = null_console_scroll,
-                      .clr = null_console_clr };
+  return (console_t) { .x = 0,
+                       .y = 0,
+                       .w = 0,
+                       .h = 0,
+                       .putch = null_console_putch,
+                       .setxy = null_console_setxy,
+                       .setfg = null_console_setfg,
+                       .setbg = null_console_setbg,
+                       .scroll = null_console_scroll,
+                       .clr = null_console_clr };
 }
 
 void
@@ -91,28 +91,31 @@ console_newline (console_t *con)
 }
 
 int
-console_putchar (console_t *con, char ch)
+console_write (console_t *con, size_t bufsize, const char *buf)
 {
   int result;
-  switch (ch)
-    {
-    case '\b':
-      if (con->x)
-        con->setxy (con, con->x - 1, con->y);
-      else if (con->y)
-        con->setxy (con, con->w - 1, con->y - 1);
-      break;
-    case '\n':
-      con->setxy (con, 0, con->y);
-      // fallthrough
-    case '\r':
-      console_newline (con);
-      break;
-    default:
-      if ((result = con->putch (con, ch)))
-        return result;
-      console_advance (con);
-      break;
-    }
+
+  for (size_t i = 0; i < bufsize; i++)
+    switch (buf[i])
+      {
+      case '\b':
+        if (con->x)
+          con->setxy (con, con->x - 1, con->y);
+        else if (con->y)
+          con->setxy (con, con->w - 1, con->y - 1);
+        break;
+      case '\n':
+        con->setxy (con, 0, con->y);
+        // fallthrough
+      case '\r':
+        console_newline (con);
+        break;
+      default:
+        if ((result = con->putch (con, buf[i])))
+          return result;
+        console_advance (con);
+        break;
+      }
+
   return 0;
 }

@@ -59,6 +59,6 @@ console_t null_console_init (void);
 void console_advance (console_t *con);
 void console_newline (console_t *con);
 
-int console_putchar (console_t *con, char ch);
+int console_write (console_t *con, size_t bufsize, const char *buf);
 
 #endif

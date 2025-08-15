@@ -17,9 +17,10 @@ LDFLAGS   := -nostdlib
 LDFLAGS32 := $(CFLAGS32) $(LDFLAGS) -Wl,-melf_i386
 LDFLAGS64 := $(CFLAGS64) $(LDFLAGS)
 
-SRCDIR  := src
-
 ARCH    := x86_64
+
+SRCDIR  := src
+UTILDIR := $(SRCDIR)/utility
 ARCHDIR := $(SRCDIR)/arch/$(ARCH)
 BOOTDIR := $(ARCHDIR)/ldr
 LDRDIR  := $(SRCDIR)/ldr

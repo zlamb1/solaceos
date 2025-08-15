@@ -10,7 +10,15 @@
 #define KPRINT_WARN "\xC1"
 #define KPRINT_ERR  "\xFF"
 
-extern spinlock_t console_lock;
+typedef struct
+{
+  console_t *console;
+  size_t head, tail;
+  char *log;
+  spinlock_t lock;
+} kern_log_t;
+
+extern kern_log_t kern_log;
 
 void initprint (console_t *con);
 
