@@ -4,7 +4,7 @@
 void
 kpanic (const char *msg)
 {
-  kprintf ("Solace: Panic: %s\n", msg);
+  kprintf (KPRINT_ERR "Panic: %s", msg);
   for (;;)
     ;
 }

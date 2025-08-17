@@ -69,6 +69,7 @@ void
 console_advance (console_t *con)
 {
   uint32_t x = con->x, y = con->y;
+
   if (++x >= con->w)
     {
       con->x = 0;
@@ -82,11 +83,13 @@ void
 console_newline (console_t *con)
 {
   uint32_t x = con->x, y = con->y;
+
   if (++y >= con->h)
     {
       y = con->h - 1;
       con->scroll (con);
     }
+
   con->setxy (con, x, y);
 }
 

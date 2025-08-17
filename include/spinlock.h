@@ -3,9 +3,11 @@
 
 #include <stdint.h>
 
+#include "atomic.h"
+
 typedef struct
 {
-  uint32_t lock;
+  atomic_t lock;
 } spinlock_t;
 
 typedef unsigned long lockflags_t;

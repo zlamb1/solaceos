@@ -1,20 +1,18 @@
 #include "spinlock.h"
+#include "atomic.h"
 
 void
-spin_lock (spinlock_t *spinlock)
+spin_lock (spinlock_t *lock)
 {
-  uint32_t eax;
+  uint32_t nlock;
 
 acquire:
-  __asm__ volatile ("lock cmpxchgl %3, %1"
-                    : "=a"(eax), "+m"(spinlock->lock)
-                    : "a"(0), "r"(1)
-                    : "memory");
+  nlock = atomic_cmpxchg_acquire (&lock->lock, 0, 1);
 
-  if (!eax)
+  if (!nlock)
     return;
 
-  while (spinlock->lock)
+  while (atomic_get (&lock->lock))
     __asm__ volatile ("pause" ::: "memory");
 
   goto acquire;

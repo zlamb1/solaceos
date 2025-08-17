@@ -7,7 +7,7 @@
 #include "util.h"
 #include "vga.h"
 
-#define COLOR(fg, bg)                                                         \
+#define VGA_COLOR(fg, bg)                                                     \
   ansi_to_vga_text_mode_0[(fg) & 0xF]                                         \
       | (ansi_to_vga_text_mode_0[(bg) & 0xF] << 4)
 
@@ -85,7 +85,7 @@ vga_setfg (console_t *con, console_color_t fg)
 
   con->fg = fg;
   vga = container_of (con, vga_console_t, base);
-  vga->color = COLOR (fg.ansi, con->bg.ansi);
+  vga->color = VGA_COLOR (fg.ansi, con->bg.ansi);
 
   return 0;
 }
@@ -106,7 +106,7 @@ vga_setbg (console_t *con, console_color_t bg)
 
   con->bg = bg;
   vga = container_of (con, vga_console_t, base);
-  vga->color = COLOR (con->fg.ansi, bg.ansi);
+  vga->color = VGA_COLOR (con->fg.ansi, bg.ansi);
 
   return 0;
 }
@@ -163,22 +163,20 @@ vga_clr (console_t *con)
 vga_console_t
 vga_console_init (void *fb, uint32_t w, uint32_t h, uint32_t pitch)
 {
-  console_color_t fg
-      = { .type = CONSOLE_COLOR_TYPE_ANSI, .ansi = ANSI_COLOR_BRIGHT_WHITE };
-  console_color_t bg
-      = { .type = CONSOLE_COLOR_TYPE_ANSI, .ansi = ANSI_COLOR_BLACK };
-  vga_console_t vga = { .base = { .w = w,
-                                  .h = h,
-                                  .fg = fg,
-                                  .bg = bg,
-                                  .putch = vga_putch,
-                                  .setxy = vga_setxy,
-                                  .setfg = vga_setfg,
-                                  .setbg = vga_setbg,
-                                  .scroll = vga_scroll,
-                                  .clr = vga_clr },
-                        .color = COLOR (fg.ansi, bg.ansi),
-                        .fb = fb,
-                        .pitch = pitch };
-  return vga;
+  console_color_t fg = ANSI_CONSOLE_COLOR (ANSI_COLOR_BRIGHT_WHITE);
+  console_color_t bg = ANSI_CONSOLE_COLOR (ANSI_COLOR_BLACK);
+
+  return (vga_console_t) { .base = { .w = w,
+                                     .h = h,
+                                     .fg = fg,
+                                     .bg = bg,
+                                     .putch = vga_putch,
+                                     .setxy = vga_setxy,
+                                     .setfg = vga_setfg,
+                                     .setbg = vga_setbg,
+                                     .scroll = vga_scroll,
+                                     .clr = vga_clr },
+                           .color = VGA_COLOR (fg.ansi, bg.ansi),
+                           .fb = fb,
+                           .pitch = pitch };
 }

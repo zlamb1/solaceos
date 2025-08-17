@@ -21,6 +21,9 @@
 #define ANSI_COLOR_BRIGHT_CYAN    14
 #define ANSI_COLOR_BRIGHT_WHITE   15
 
+#define ANSI_CONSOLE_COLOR(color)                                             \
+  (console_color_t) { .type = CONSOLE_COLOR_TYPE_ANSI, .ansi = (color) }
+
 typedef struct
 {
   enum
