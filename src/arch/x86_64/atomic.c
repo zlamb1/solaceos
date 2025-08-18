@@ -1,6 +1,5 @@
 #include "atomic.h"
-
-#define compiler_fence() __asm__ volatile ("" ::: "memory")
+#include "compiler.h"
 
 int
 atomic_get (const atomic_t *x)
@@ -11,7 +10,7 @@ atomic_get (const atomic_t *x)
 int
 atomic_get_acquire (const atomic_t *x)
 {
-  compiler_fence ();
+  barrier ();
   return *((const volatile atomic_t *) x);
 }
 
@@ -24,7 +23,7 @@ atomic_set (atomic_t *x, int n)
 void
 atomic_set_release (atomic_t *x, int n)
 {
-  compiler_fence ();
+  barrier ();
   *((volatile atomic_t *) x) = n;
 }
 
