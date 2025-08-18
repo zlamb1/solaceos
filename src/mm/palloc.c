@@ -2,8 +2,8 @@
 #include <stdint.h>
 
 #include "kprint.h"
-#include "memblock.h"
-#include "palloc.h"
+#include "mm/memblock.h"
+#include "mm/palloc.h"
 #include "panic.h"
 #include "util.h"
 

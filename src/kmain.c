@@ -1,6 +1,6 @@
 #include "kprint.h"
 #include "ldr/boot.h"
-#include "palloc.h"
+#include "mm/palloc.h"
 
 void __attribute__ ((noreturn)) kmain (boot_info_t *bi);
 

@@ -5,7 +5,7 @@
 #include "ldr/mmap.h"
 #include "ldr/paging.h"
 #include "mb1.h"
-#include "memblock.h"
+#include "mm/memblock.h"
 #include "string.h"
 #include "util.h"
 #include "vga.h"

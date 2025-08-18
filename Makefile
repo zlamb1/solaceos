@@ -31,14 +31,14 @@ LDROUT  := $(OUTDIR)/ldr
 LDRSRCS := $(BOOTDIR)/ldr.S  $(BOOTDIR)/div.c $(ARCHDIR)/elf.c $(ARCHDIR)/io.c $(ARCHDIR)/paging.c \
 		   $(LDRDIR)/memblock.c $(LDRDIR)/ldr.c $(LDRDIR)/kprint.c $(LDRDIR)/mmap.c $(LDRDIR)/fail.c \
 		   $(SRCDIR)/string.c $(SRCDIR)/vga.c $(SRCDIR)/console.c $(SRCDIR)/print.c $(SRCDIR)/sort.c \
-		   $(SRCDIR)/memblock.c
+		   $(SRCDIR)/mm/memblock.c
 LDROBJS := $(patsubst %.src,$(LDROUT)/%.o,$(addsuffix .src,$(basename $(LDRSRCS))))
 LDRDEPS := $(LDROBJS:.o=.d)
 LDRSCRI := $(BOOTDIR)/ldr.ld
 
 KRNSRCS := $(ARCHDIR)/io.c $(ARCHDIR)/endian.c $(ARCHDIR)/atomic.c $(ARCHDIR)/spinlock.c $(ARCHDIR)/console.c \
 		   $(SRCDIR)/kmain.c $(SRCDIR)/string.c $(SRCDIR)/panic.c $(SRCDIR)/console.c $(SRCDIR)/vga.c \
-		   $(SRCDIR)/print.c $(SRCDIR)/kprint.c $(SRCDIR)/palloc.c
+		   $(SRCDIR)/print.c $(SRCDIR)/kprint.c $(SRCDIR)/mm/palloc.c
 KRNOBJS := $(patsubst %.src,$(OUTDIR)/%.o,$(addsuffix .src,$(basename $(KRNSRCS))))
 KRNDEPS := $(KRNOBJS:.o=.d)
 KRNSCRI := $(ARCHDIR)/krn.ld

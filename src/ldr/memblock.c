@@ -1,4 +1,4 @@
-#include "memblock.h"
+#include "mm/memblock.h"
 #include "errno.h"
 #include "ldr/fail.h"
 
@@ -44,7 +44,7 @@ memblock_append (uint64_t start, uint64_t end, memblock_type_t type)
   if (!memblock_has_capacity ())
     return -ENOMEM;
   memblocks[nmemblocks++]
-      = (memblock_t){ .start = start, .end = end, .type = type };
+      = (memblock_t) { .start = start, .end = end, .type = type };
   return 0;
 }
 

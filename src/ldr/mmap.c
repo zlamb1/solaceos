@@ -3,7 +3,7 @@
 #include "ldr/boot.h"
 #include "ldr/fail.h"
 #include "mb1.h"
-#include "memblock.h"
+#include "mm/memblock.h"
 #include "string.h"
 
 static memblock_type_t
@@ -31,12 +31,12 @@ get_storage_unit (uint64_t bytes)
   uint64_t mib = kib / 1024;
   uint64_t gib = mib / 1024;
   if (gib >= 10)
-    return (storage_unit_t){ .name = "GiB", .value = gib };
+    return (storage_unit_t) { .name = "GiB", .value = gib };
   if (mib >= 10)
-    return (storage_unit_t){ .name = "MiB", .value = mib };
+    return (storage_unit_t) { .name = "MiB", .value = mib };
   if (kib)
-    return (storage_unit_t){ .name = "KiB", .value = kib };
-  return (storage_unit_t){ .name = "B  ", .value = bytes };
+    return (storage_unit_t) { .name = "KiB", .value = kib };
+  return (storage_unit_t) { .name = "B  ", .value = bytes };
 }
 
 static const char *

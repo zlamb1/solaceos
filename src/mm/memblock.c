@@ -1,4 +1,4 @@
-#include "memblock.h"
+#include "mm/memblock.h"
 #include "errno.h"
 #include "sort.h"
 #include "util.h"
@@ -38,19 +38,19 @@ memblock_reserve (uint64_t start, uint64_t end, memblock_type_t type,
   while ((memblock = memblocks_iterate (memblock)) != NULL)
     {
       evts[nevts++]
-          = (memblock_event_t){ .value = memblock->start,
-                                .type = memblock->type,
-                                .evt_type = MEMBLOCK_EVT_TYPE_START };
-      evts[nevts++] = (memblock_event_t){ .value = memblock->end,
-                                          .type = memblock->type,
-                                          .evt_type = MEMBLOCK_EVT_TYPE_END };
+          = (memblock_event_t) { .value = memblock->start,
+                                 .type = memblock->type,
+                                 .evt_type = MEMBLOCK_EVT_TYPE_START };
+      evts[nevts++] = (memblock_event_t) { .value = memblock->end,
+                                           .type = memblock->type,
+                                           .evt_type = MEMBLOCK_EVT_TYPE_END };
     }
-  evts[nevts++] = (memblock_event_t){
+  evts[nevts++] = (memblock_event_t) {
     .value = start,
     .type = flags & MEMBLOCK_RESERVE_FLAG_FORCE ? MEMBLOCK_TYPE_MAX : type,
     .evt_type = MEMBLOCK_EVT_TYPE_START
   };
-  evts[nevts++] = (memblock_event_t){
+  evts[nevts++] = (memblock_event_t) {
     .value = end,
     .type = flags & MEMBLOCK_RESERVE_FLAG_FORCE ? MEMBLOCK_TYPE_MAX : type,
     .evt_type = MEMBLOCK_EVT_TYPE_END

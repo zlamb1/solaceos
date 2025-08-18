@@ -151,12 +151,12 @@ typedef struct
 
 typedef struct
 {
-  u32 bgdt_blk_bitmap;
-  u32 bgdt_ino_bitmap;
-  u32 bgdt_ino_table;
-  u16 bgdt_freeblks;
-  u16 bgdt_freeinos;
-  u16 bgdt_dirs;
+  u32 dt_blk_bitmap;
+  u32 dt_ino_bitmap;
+  u32 dt_ino_table;
+  u16 dt_freeblks;
+  u16 dt_freeinos;
+  u16 dt_dirs;
 } ext2fs_bgdt_t;
 
 typedef struct

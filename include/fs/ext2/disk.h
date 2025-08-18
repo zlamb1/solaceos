@@ -54,12 +54,12 @@ typedef struct
 
 typedef struct
 {
-  __le32 bgdt_blk_bitmap;
-  __le32 bgdt_ino_bitmap;
-  __le32 bgdt_ino_table;
-  __le16 bgdt_freeblks;
-  __le16 bgdt_freeinos;
-  __le16 bgdt_dirs;
+  __le32 dt_blk_bitmap;
+  __le32 dt_ino_bitmap;
+  __le32 dt_ino_table;
+  __le16 dt_freeblks;
+  __le16 dt_freeinos;
+  __le16 dt_dirs;
 } ext2fs_bgdt_disk_t;
 
 typedef struct
