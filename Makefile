@@ -36,9 +36,13 @@ LDROBJS := $(patsubst %.src,$(LDROUT)/%.o,$(addsuffix .src,$(basename $(LDRSRCS)
 LDRDEPS := $(LDROBJS:.o=.d)
 LDRSCRI := $(BOOTDIR)/ldr.ld
 
-KRNSRCS := $(ARCHDIR)/io.c $(ARCHDIR)/endian.c $(ARCHDIR)/atomic.c $(ARCHDIR)/spinlock.c $(ARCHDIR)/console.c \
-		   $(SRCDIR)/kmain.c $(SRCDIR)/string.c $(SRCDIR)/panic.c $(SRCDIR)/console.c $(SRCDIR)/vga.c \
-		   $(SRCDIR)/print.c $(SRCDIR)/kprint.c $(SRCDIR)/mm/palloc.c
+ARCHSRCS := io endian atomic spinlock console
+SRCSRCS  := kmain string panic console vga print kprint
+MMSRCS   := palloc
+
+KRNSRCS := $(patsubst %,$(ARCHDIR)/%.c,$(ARCHSRCS)) \
+	       $(patsubst %,$(SRCDIR)/%.c,$(SRCSRCS)) \
+		   $(patsubst %,$(SRCDIR)/mm/%.c,$(MMSRCS))
 KRNOBJS := $(patsubst %.src,$(OUTDIR)/%.o,$(addsuffix .src,$(basename $(KRNSRCS))))
 KRNDEPS := $(KRNOBJS:.o=.d)
 KRNSCRI := $(ARCHDIR)/krn.ld
