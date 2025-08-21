@@ -20,7 +20,6 @@ LDFLAGS64 := $(CFLAGS64) $(LDFLAGS)
 ARCH    := x86_64
 
 SRCDIR  := src
-UTILDIR := $(SRCDIR)/utility
 ARCHDIR := $(SRCDIR)/arch/$(ARCH)
 BOOTDIR := $(ARCHDIR)/ldr
 LDRDIR  := $(SRCDIR)/ldr
