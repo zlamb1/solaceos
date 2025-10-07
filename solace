@@ -1,0 +1,157 @@
+#!/usr/bin/env python
+
+import optparse, platform, shutil, subprocess, sys, textwrap
+
+try:
+    from gettext import gettext
+except ImportError:
+    def gettext(m):
+        return m
+
+_ = gettext
+
+COLOR_RESET = "\033[0m"
+COLOR_BOLD = "\033[1m"
+COLOR_PRIMARY = "\033[33m"
+COLOR_SECONDARY = "\033[36m"
+COLOR_ERROR = "\033[31m"
+EXIT_SUCCESS = 0
+
+class cmd:
+    def __init__(self, names, desc="", fn=None):
+        self.names = names
+        self.desc = desc
+        self.fn = fn
+
+class arch:
+    def __init__(self, names, qemu_cmd, flags=["-drive", "format=raw,media=disk,file=build/bootdisk.img", "-nic", "none", "-m", "1G"]):
+        self.names = names
+        self.qemu_cmd = qemu_cmd
+        self.flags = flags
+
+class HelpFormatter(optparse.IndentedHelpFormatter):
+    def __init__(self):
+        optparse.IndentedHelpFormatter.__init__(self)
+
+    def expand_default(self, option):
+        return f"{COLOR_BOLD}{super().expand_default(option)}{COLOR_RESET}"
+    
+    def format_heading(self, heading):
+        return "%*s%s%s%s:%s\n" % (self.current_indent, "", COLOR_PRIMARY, COLOR_BOLD, heading, COLOR_RESET)
+
+    def format_option(self, option):
+        return f"{COLOR_SECONDARY}{super().format_option(option)}{COLOR_RESET}"
+
+    def format_usage(self, usage):
+        return _("%s%sUsage: %s%s\n") % (COLOR_PRIMARY, COLOR_BOLD, COLOR_RESET, usage)
+
+cmd_name = "solace"
+did_build = False
+
+def info(msg):
+    print(f"{COLOR_BOLD}solace: {COLOR_SECONDARY}{COLOR_BOLD}{msg}{COLOR_RESET}")
+
+def get_usage():
+    return f"{COLOR_SECONDARY}{COLOR_BOLD}{cmd_name} {COLOR_RESET}{COLOR_SECONDARY}[OPTIONS] [COMMAND]{COLOR_RESET}"
+
+def error(msg, returncode = -1):
+    print(f"{COLOR_BOLD}solace: {COLOR_ERROR}{COLOR_BOLD}error:{COLOR_RESET}", msg, file=sys.stderr)
+    sys.exit(returncode)
+
+def cmd_build(opts):
+    if not did_build:
+        info("project up to date")
+    sys.exit(EXIT_SUCCESS)
+
+def cmd_run(opts):
+    arch = None
+
+    for _arch in archs:
+        if platform.machine() in _arch.names:
+            arch = _arch
+            break 
+
+    if arch is None:
+        error("unsupported arch")
+
+    if shutil.which(arch.qemu_cmd) is None:
+        error(f"{arch.qemu_cmd} not found")
+
+    info(f"running {arch.qemu_cmd}...")
+
+    flags = arch.flags
+    if opts.debug:
+        flags += ["-s", "-S"]
+        qemu_proc = subprocess.Popen([arch.qemu_cmd] + flags)
+        subprocess.run(["gdb", "-q", "-x", "gdb/k.gdb"])
+        qemu_proc.terminate()
+    else:   
+        proc = subprocess.run([arch.qemu_cmd] + flags)
+        sys.exit(proc.returncode)
+
+if __name__ == "__main__":
+    cmds = [
+        cmd(["build", "b"], "build project", cmd_build),
+        cmd(["run", "r"], "run qemu", cmd_run)
+    ]
+
+    archs = [
+        arch(("x86_64"), "qemu-system-x86_64")
+    ]
+
+    max_width = 0
+    max_desc = 0
+
+    for cmd in cmds:
+        width = 0
+        for name in cmd.names:
+            width += len(name)
+        width += (len(cmd.names) - 1) * 2
+        max_width = max(max_width, width)
+        max_desc = max(max_desc, len(cmd.desc))
+
+    if shutil.which("make") is None:
+        error("make not found")
+
+    if len(sys.argv) > 0:
+        cmd_name = sys.argv[0]
+
+    formatter = HelpFormatter()
+
+    parser = optparse.OptionParser(
+        formatter=formatter,
+        prog=cmd_name,
+        usage=get_usage(),
+    )
+
+    parser.add_option("-q", "--quiet", action="store_true", dest="quiet")
+    parser.add_option("-d", "--debug", action="store_true", dest="debug")
+
+    opts, args = parser.parse_args()
+    
+    if len(args) == 0:
+        parser.print_help()
+        sys.exit(1)
+
+    # TODO: handle flags
+    found_cmd = None
+
+    for cmd in cmds:
+        if args[0] in cmd.names:
+            found_cmd = cmd
+            break
+
+    if found_cmd is None:
+        parser.print_help()
+        sys.exit(1)
+
+    proc = subprocess.run(["make", "-s", "-q"])
+
+    if proc.returncode == 1:
+        did_build = True
+        proc = subprocess.run(["make"])
+        if proc.returncode != 0:
+            sys.exit(proc.returncode)
+
+    if not found_cmd.fn is None:
+        found_cmd.fn(opts)
