@@ -63,10 +63,10 @@ $(OUTDIR)/%.o: %.psf | $(OASTDIR)
 	cd $(dir $<); $(CROSS_OC) -O elf64-x86-64 -B i386 -I binary -L -- $(notdir $<) $(ABSPATH)/$@
 
 $(OUTDIR)/%.o: %.c | $(OSRCDIR)
-	$(CROSS_CC) -c $(CFLAGS) $< -o $@
+	$(CROSS_CC) -c -MMD -Isrc $(CFLAGS) $< -o $@
 
 $(OUTDIR)/%.o: %.S | $(OSRCDIR)
-	$(CROSS_CC) -c $(CFLAGS) $< -o $@
+	$(CROSS_CC) -c -MMD $(CFLAGS) $< -o $@
 
 $(LIMSYS): $(LIMEXE)
 

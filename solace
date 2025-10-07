@@ -47,8 +47,11 @@ class HelpFormatter(optparse.IndentedHelpFormatter):
 
 cmd_name = "solace"
 did_build = False
+is_quiet = False
 
 def info(msg):
+    if is_quiet:
+        return
     print(f"{COLOR_BOLD}solace: {COLOR_SECONDARY}{COLOR_BOLD}{msg}{COLOR_RESET}")
 
 def get_usage():
@@ -98,7 +101,7 @@ if __name__ == "__main__":
     archs = [
         arch(("x86_64"), "qemu-system-x86_64")
     ]
-
+    
     max_width = 0
     max_desc = 0
 
@@ -133,7 +136,9 @@ if __name__ == "__main__":
         parser.print_help()
         sys.exit(1)
 
-    # TODO: handle flags
+    if opts.quiet:
+        is_quiet = True
+
     found_cmd = None
 
     for cmd in cmds:
@@ -149,7 +154,10 @@ if __name__ == "__main__":
 
     if proc.returncode == 1:
         did_build = True
-        proc = subprocess.run(["make"])
+        stdout_redir = None
+        if is_quiet:
+            stdout_redir = subprocess.DEVNULL
+        proc = subprocess.run(["make"], stdout=stdout_redir)
         if proc.returncode != 0:
             sys.exit(proc.returncode)
 

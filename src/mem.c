@@ -1,7 +1,7 @@
 #include "mem.h"
 
 void
-memcpy (void *dst, const void *src, size_t count)
+kmemcpy (void *dst, const void *src, size_t count)
 {
   char *d       = (char *) dst;
   const char *s = (const char *) src;
@@ -11,7 +11,7 @@ memcpy (void *dst, const void *src, size_t count)
 }
 
 void
-memset (void *dst, int v, size_t count)
+kmemset (void *dst, int v, size_t count)
 {
   char *d = (char *) dst;
 

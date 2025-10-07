@@ -1,6 +1,6 @@
 #include "vcon.h"
 #include "common.h"
-#include "limine.h"
+#include "limine/limine.h"
 #include "mem.h"
 #include "psf.h"
 
@@ -32,7 +32,7 @@ vcon_init (struct limine_framebuffer *fb)
           || fb->blue_mask_size != 8))
     goto nographics;
 
-  memcpy (&con.fb, fb, sizeof (struct limine_framebuffer));
+  kmemcpy (&con.fb, fb, sizeof (struct limine_framebuffer));
 
   con.nographics   = 0;
   con.width        = fb->width / con.font.glyph_width;
@@ -106,9 +106,9 @@ vcon_scroll (struct vcon *con)
 
   for (y = 0; y < con->height - 1;
        ++y, currow = nextrow, nextrow += glyph_row_stride)
-    memcpy (currow, nextrow, glyph_row_stride);
+    kmemcpy (currow, nextrow, glyph_row_stride);
 
-  memset (currow, 0, glyph_row_stride);
+  kmemset (currow, 0, glyph_row_stride);
 }
 
 static always_inline void

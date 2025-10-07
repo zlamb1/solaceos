@@ -3,7 +3,7 @@
 
 #include "common.h"
 #include "font.h"
-#include "limine.h"
+#include "limine/limine.h"
 
 #define VCON_NOGRAPHICS { .nographics = 1 }
 
