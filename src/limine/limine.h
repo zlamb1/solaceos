@@ -10,6 +10,9 @@
       = { 0xf6b8f4b39de7d1ae, 0xfab91a6940fcb9cf, 0x785c6ed015d3e316,         \
           0x181e920a7852b9d9 };
 
+#define LIMINE_BOOTLOADER_INFO_REQUEST                                        \
+  { LIMINE_COMMON_MAGIC, 0xf55038d8e2a1202f, 0x279426fcf5f59740 }
+
 #define LIMINE_FRAMEBUFFER_REQUEST                                            \
   { LIMINE_COMMON_MAGIC, 0x9d5827dcd881dd75, 0xa3148604f6fab11b }
 
@@ -21,6 +24,20 @@
       = { 0xadc0e0531bb10d03, 0x9572709f31764c62 };
 
 #define LIMINE_FRAMEBUFFER_RGB 1
+
+struct limine_bootloader_info_request
+{
+  uint64_t id[4];
+  uint64_t revision;
+  struct limine_bootloader_info_response *response;
+};
+
+struct limine_bootloader_info_response
+{
+  uint64_t revision;
+  char *name;
+  char *version;
+};
 
 struct limine_framebuffer_request
 {

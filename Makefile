@@ -10,12 +10,13 @@ CFLAGS   := $(WARNINGS) -g -ffreestanding -fno-strict-aliasing \
 			-mno-red-zone -mno-mmx -mno-sse2 -mno-3dnow -mcmodel=large
 LDFLAGS  := -nostdlib
 
+ARCH     := x86_64
+
 SRCDIR   := src
+ARCDIR   := arch/$(ARCH)
 ASTDIR   := assets
 LIMDIR   := limine
 OUTDIR   := build
-OSRCDIR  := $(OUTDIR)/$(SRCDIR)
-OASTDIR  := $(OUTDIR)/$(ASTDIR)
 PRTDIR   := $(OUTDIR)/boot
 MNTDIR   := $(OUTDIR)/mnt
 
@@ -25,7 +26,7 @@ LIMCFG   := $(SRCDIR)/limine/limine.conf
 LIMEXE   := $(LIMBIN)/limine
 
 FNTS     := $(ASTDIR)/consolefont.psf
-SRCS     := mem.c psf.c vcon.c print.c main.c
+SRCS     := $(ARCDIR)/fence.c mem.c psf.c vcon.c print.c main.c
 LNK      := $(SRCDIR)/k.ld
 USRCS    := $(patsubst %.S,%.src,$(patsubst %.c,%.src,$(SRCS)))
 OBJS     := $(patsubst %.src,$(OUTDIR)/$(SRCDIR)/%.o,$(USRCS))
@@ -60,24 +61,21 @@ $(KRNIMG): $(OFNTS) $(OBJS) $(LNK) | $(OUTDIR)
 
 $(OUTDIR)/%.o: %.psf | $(OASTDIR)
 # NOTE: cd into directory to prevent objcopy from prepending path to binary symbols
+	@mkdir -p $(dir $(ABSPATH)/$@)
 	cd $(dir $<); $(CROSS_OC) -O elf64-x86-64 -B i386 -I binary -L -- $(notdir $<) $(ABSPATH)/$@
 
 $(OUTDIR)/%.o: %.c | $(OSRCDIR)
+	@mkdir -p $(dir $@)
 	$(CROSS_CC) -c -MMD -Isrc $(CFLAGS) $< -o $@
 
 $(OUTDIR)/%.o: %.S | $(OSRCDIR)
+	@mkdir -p $(dir $@)
 	$(CROSS_CC) -c -MMD $(CFLAGS) $< -o $@
 
 $(LIMSYS): $(LIMEXE)
 
 $(LIMEXE): | $(LIMDIR)
 	cd $(LIMDIR); ./bootstrap; ./configure --enable-bios; make -j4
-
-$(OASTDIR): | $(OUTDIR)
-	mkdir $@
-
-$(OSRCDIR): | $(OUTDIR)
-	mkdir $@
 
 $(OUTDIR):
 	mkdir $@
