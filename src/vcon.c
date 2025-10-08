@@ -1,5 +1,6 @@
 #include "vcon.h"
 #include "common.h"
+#include "fence.h"
 #include "limine/limine.h"
 #include "mem.h"
 #include "psf.h"
@@ -159,4 +160,13 @@ vcon_write (struct vcon *con, const char *s)
 {
   for (; s[0]; ++s)
     vcon_putchar (con, s[0]);
+}
+
+void
+vcon_sync (struct vcon *con)
+{
+  if (con->nographics)
+    return;
+
+  sfence ();
 }

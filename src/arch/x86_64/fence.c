@@ -1,4 +1,4 @@
-#include "arch/fence.h"
+#include "fence.h"
 
 void
 sfence (void)

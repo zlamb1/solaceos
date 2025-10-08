@@ -30,28 +30,28 @@
 
 struct limine_bootloader_info_request
 {
-  uint64_t id[4];
-  uint64_t revision;
+  u64 id[4];
+  u64 revision;
   struct limine_bootloader_info_response *response;
 };
 
 struct limine_bootloader_info_response
 {
-  uint64_t revision;
+  u64 revision;
   char *name;
   char *version;
 };
 
 struct limine_executable_cmdline_request
 {
-  uint64_t id[4];
-  uint64_t revision;
+  u64 id[4];
+  u64 revision;
   struct limine_executable_cmdline_response *response;
 };
 
 struct limine_executable_cmdline_response
 {
-  uint64_t revision;
+  u64 revision;
   char *cmdline;
 };
 

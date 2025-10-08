@@ -24,5 +24,6 @@ struct vcon
 struct vcon vcon_init (struct limine_framebuffer *fb);
 void vcon_putchar (struct vcon *con, char c);
 void vcon_write (struct vcon *con, const char *s);
+void vcon_sync (struct vcon *con);
 
 #endif

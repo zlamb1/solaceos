@@ -1,6 +1,5 @@
 #include <stddef.h>
 
-#include "arch/fence.h"
 #include "datetime.h"
 #include "limine/limine.h"
 #include "print.h"
@@ -52,8 +51,6 @@ kmain (void)
   kbooted_by ();
   kboot_time ();
   kprintln ("Bootloader Cmdline: '%s'", cmdline_request.response->cmdline);
-
-  sfence ();
 
   for (;;)
     ;

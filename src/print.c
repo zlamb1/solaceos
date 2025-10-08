@@ -64,6 +64,8 @@ kprint_u64 (u64 n, u8 base, u8 capital)
   for (int i = len - 1; i >= 0; i--)
     vcon_putchar (&con, buf[i]);
 
+  vcon_sync (&con);
+
   return len;
 }
 
@@ -214,6 +216,7 @@ vkprint (const char *fmt, va_list args)
         }
     }
 
+  vcon_sync (&con);
   return len;
 }
 

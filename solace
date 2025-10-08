@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import optparse, platform, shutil, subprocess, sys, textwrap
+import optparse, os, platform, shutil, subprocess, sys, textwrap
 
 try:
     from gettext import gettext
@@ -92,10 +92,23 @@ def cmd_run(opts):
         proc = subprocess.run([arch.qemu_cmd] + flags)
         sys.exit(proc.returncode)
 
+def cmd_bear(opts):
+    if shutil.which("bear") is None:
+        error("bear not found")
+    
+    subprocess.run(["make", "clean"])
+    try:
+        os.mkdir("build")
+    except:
+        error(f"failed to create build directory")
+    proc = subprocess.run(["bear", "--output", "build/compile_commands.json", "--", "make", "-j4"])
+    sys.exit(proc.returncode)
+
 if __name__ == "__main__":
     cmds = [
         cmd(["build", "b"], "build project", cmd_build),
-        cmd(["run", "r"], "run qemu", cmd_run)
+        cmd(["run", "r"], "run qemu", cmd_run),
+        cmd(["bear"], "create compile commands", cmd_bear),
     ]
 
     archs = [
