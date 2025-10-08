@@ -45,6 +45,7 @@ class HelpFormatter(optparse.IndentedHelpFormatter):
     def format_usage(self, usage):
         return _("%s%sUsage: %s%s\n") % (COLOR_PRIMARY, COLOR_BOLD, COLOR_RESET, usage)
 
+build_dir = "build"
 cmd_name = "solace"
 did_build = False
 is_quiet = False
@@ -96,12 +97,18 @@ def cmd_bear(opts):
     if shutil.which("bear") is None:
         error("bear not found")
     
-    subprocess.run(["make", "clean"])
+    subprocess.run(["make", "-s", "clean"])
+
     try:
-        os.mkdir("build")
+        os.mkdir(build_dir)
     except:
-        error(f"failed to create build directory")
-    proc = subprocess.run(["bear", "--output", "build/compile_commands.json", "--", "make", "-j4"])
+        error(f"failed to create build directory: '{build_dir}'")
+
+    proc = subprocess.run(["bear", "--output", f"{build_dir}/compile_commands.json", "--", "make", "-j4"])
+
+    if proc.returncode == 0:
+        info("generated compile_commands.json")    
+
     sys.exit(proc.returncode)
 
 if __name__ == "__main__":
@@ -114,17 +121,6 @@ if __name__ == "__main__":
     archs = [
         arch(("x86_64"), "qemu-system-x86_64")
     ]
-    
-    max_width = 0
-    max_desc = 0
-
-    for cmd in cmds:
-        width = 0
-        for name in cmd.names:
-            width += len(name)
-        width += (len(cmd.names) - 1) * 2
-        max_width = max(max_width, width)
-        max_desc = max(max_desc, len(cmd.desc))
 
     if shutil.which("make") is None:
         error("make not found")

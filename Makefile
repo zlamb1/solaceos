@@ -16,7 +16,7 @@ SRCDIR   := src
 ARCDIR   := arch/$(ARCH)
 ASTDIR   := assets
 LIMDIR   := limine
-OUTDIR   := build
+OUTDIR   ?= build
 PRTDIR   := $(OUTDIR)/boot
 MNTDIR   := $(OUTDIR)/mnt
 
