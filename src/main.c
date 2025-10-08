@@ -9,6 +9,8 @@ LIMINE_REQUESTS_START_MARKER
 
 static struct limine_bootloader_info_request bl_request
     = LIMINE_BOOTLOADER_INFO_REQUEST;
+static struct limine_executable_cmdline_request cmdline_request
+    = LIMINE_EXECUTABLE_CMDLINE_REQUEST;
 static struct limine_framebuffer_request fb_request
     = LIMINE_FRAMEBUFFER_REQUEST;
 static struct limine_date_at_boot_request date_request
@@ -45,9 +47,11 @@ void
 kmain (void)
 {
   kprint_init (fb_request.response);
+
   kprintln ("Starting SolaceOS...");
   kbooted_by ();
   kboot_time ();
+  kprintln ("Bootloader Cmdline: '%s'", cmdline_request.response->cmdline);
 
   sfence ();
 

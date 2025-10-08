@@ -13,6 +13,9 @@
 #define LIMINE_BOOTLOADER_INFO_REQUEST                                        \
   { LIMINE_COMMON_MAGIC, 0xf55038d8e2a1202f, 0x279426fcf5f59740 }
 
+#define LIMINE_EXECUTABLE_CMDLINE_REQUEST                                     \
+  { LIMINE_COMMON_MAGIC, 0x4b161536e598651e, 0xb390ad4a2f1f303a }
+
 #define LIMINE_FRAMEBUFFER_REQUEST                                            \
   { LIMINE_COMMON_MAGIC, 0x9d5827dcd881dd75, 0xa3148604f6fab11b }
 
@@ -37,6 +40,19 @@ struct limine_bootloader_info_response
   uint64_t revision;
   char *name;
   char *version;
+};
+
+struct limine_executable_cmdline_request
+{
+  uint64_t id[4];
+  uint64_t revision;
+  struct limine_executable_cmdline_response *response;
+};
+
+struct limine_executable_cmdline_response
+{
+  uint64_t revision;
+  char *cmdline;
 };
 
 struct limine_framebuffer_request
