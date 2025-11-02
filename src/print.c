@@ -1,5 +1,6 @@
 #include <limits.h>
 
+#include "panic.h"
 #include "print.h"
 #include "vcon.h"
 
@@ -34,6 +35,7 @@ kprint_init (struct limine_framebuffer_response *fb_response)
   if (!fb)
     return;
 
+  kpanic_init (fb);
   con = vcon_init (fb);
 }
 
@@ -72,12 +74,11 @@ kprint_u64 (u64 n, u8 base, u8 capital)
 static int
 kprint_i64 (i64 n, u8 base, u8 capital)
 {
-  return n < 0
-             ? (vcon_putchar (&con, '-'),
-                1
-                    + kprint_u64 (n == LONG_LONG_MIN ? (1LLU << 63) : (u64) -n,
-                                  base, capital))
-             : kprint_u64 ((u64) n, base, capital);
+  return n < 0 ? (vcon_putchar (&con, '-'),
+                  1
+                      + kprint_u64 (n == LLONG_MIN ? (1LLU << 63) : (u64) -n,
+                                    base, capital))
+               : kprint_u64 ((u64) n, base, capital);
 }
 
 int

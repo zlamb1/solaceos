@@ -35,11 +35,18 @@ vcon_init (struct limine_framebuffer *fb)
 
   kmemcpy (&con.fb, fb, sizeof (struct limine_framebuffer));
 
-  con.nographics   = 0;
-  con.width        = fb->width / con.font.glyph_width;
-  con.height       = fb->height / con.font.glyph_height;
-  con.lpad         = (fb->width % con.font.glyph_width) / 2;
-  con.tpad         = (fb->height % con.font.glyph_height) / 2;
+  con.nographics = 0;
+  con.width      = fb->width / con.font.glyph_width;
+  con.height     = fb->height / con.font.glyph_height;
+
+  con.lpad = fb->width % con.font.glyph_width;
+  if (con.lpad)
+    con.lpad = (con.lpad - 1) / 2;
+
+  con.tpad = fb->height % con.font.glyph_height;
+  if (con.tpad)
+    con.tpad = (con.tpad - 1) / 2;
+
   con.cx           = 0;
   con.cy           = 0;
   con.pixel_stride = fb->bpp >> 3;
@@ -135,8 +142,7 @@ vcon_putchar (struct vcon *con, char c)
       if (con->cx)
         {
           --con->cx;
-          vcon_putchar (con, ' ');
-          --con->cx;
+          vcon_putc (con, ' ', con->cx, con->cy);
         }
       break;
     case '\r':

@@ -2,6 +2,7 @@
 
 #include "datetime.h"
 #include "limine/limine.h"
+#include "panic.h"
 #include "print.h"
 
 LIMINE_REQUESTS_START_MARKER
@@ -35,10 +36,10 @@ kboot_time (void)
   const char *segment = dt.hour >= 12 ? "PM" : "AM";
 
   if (minute > 9)
-    kprintln ("Booted At %u:%u %s %u/%u/%u", hour ? hour : 12, minute, segment,
-              dt.month + 1, dt.day_of_month + 1, dt.year);
+    kprintln ("Booted At %u:%u %s %u/%u/%u UTC", hour ? hour : 12, minute,
+              segment, dt.month + 1, dt.day_of_month + 1, dt.year);
   else
-    kprintln ("Booted At %u:0%u %s %u/%u/%u", hour ? hour : 12, minute,
+    kprintln ("Booted At %u:0%u %s %u/%u/%u UTC", hour ? hour : 12, minute,
               segment, dt.month + 1, dt.day_of_month + 1, dt.year);
 }
 
@@ -50,7 +51,7 @@ kmain (void)
   kprintln ("Starting SolaceOS...");
   kbooted_by ();
   kboot_time ();
-  kprintln ("Bootloader Cmdline: '%s'", cmdline_request.response->cmdline);
+  kprintln ("Booted With Arguments: '%s'", cmdline_request.response->cmdline);
 
   for (;;)
     ;

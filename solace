@@ -1,174 +1,123 @@
 #!/usr/bin/env python
 
-import optparse, os, platform, shutil, subprocess, sys, textwrap
+import os, signal, subprocess, sys, time
 
-try:
-    from gettext import gettext
-except ImportError:
-    def gettext(m):
-        return m
-
-_ = gettext
-
+BUILD_DIR = 'build'
 COLOR_RESET = "\033[0m"
 COLOR_BOLD = "\033[1m"
 COLOR_PRIMARY = "\033[33m"
 COLOR_SECONDARY = "\033[36m"
 COLOR_ERROR = "\033[31m"
-EXIT_SUCCESS = 0
+ERROR_CODE = -1
+TAB_SIZE = 4
+QEMU = 'qemu-system-x86_64'
+QEMU_ARGS = [
+    QEMU,
+    '-drive', f'format=raw,file={BUILD_DIR}/solace.img', 
+    '-nic', 'none',
+]
 
 class cmd:
-    def __init__(self, names, desc="", fn=None):
-        self.names = names
-        self.desc = desc
+    def __init__(self, fn, aliases, desc=''):
         self.fn = fn
+        self.aliases = aliases
+        self.desc = desc
 
-class arch:
-    def __init__(self, names, qemu_cmd, flags=["-drive", "format=raw,media=disk,file=build/bootdisk.img", "-nic", "none", "-m", "1G"]):
-        self.names = names
-        self.qemu_cmd = qemu_cmd
-        self.flags = flags
-
-class HelpFormatter(optparse.IndentedHelpFormatter):
-    def __init__(self):
-        optparse.IndentedHelpFormatter.__init__(self)
-
-    def expand_default(self, option):
-        return f"{COLOR_BOLD}{super().expand_default(option)}{COLOR_RESET}"
-    
-    def format_heading(self, heading):
-        return "%*s%s%s%s:%s\n" % (self.current_indent, "", COLOR_PRIMARY, COLOR_BOLD, heading, COLOR_RESET)
-
-    def format_option(self, option):
-        return f"{COLOR_SECONDARY}{super().format_option(option)}{COLOR_RESET}"
-
-    def format_usage(self, usage):
-        return _("%s%sUsage: %s%s\n") % (COLOR_PRIMARY, COLOR_BOLD, COLOR_RESET, usage)
-
-build_dir = "build"
-cmd_name = "solace"
-did_build = False
 is_quiet = False
 
 def info(msg):
     if is_quiet:
         return
-    print(f"{COLOR_BOLD}solace: {COLOR_SECONDARY}{COLOR_BOLD}{msg}{COLOR_RESET}")
+    print(f"{COLOR_BOLD}{COLOR_PRIMARY}solace: {COLOR_RESET}{COLOR_BOLD}{msg}{COLOR_RESET}")
 
-def get_usage():
-    return f"{COLOR_SECONDARY}{COLOR_BOLD}{cmd_name} {COLOR_RESET}{COLOR_SECONDARY}[OPTIONS] [COMMAND]{COLOR_RESET}"
+def usage():
+    print(f'{COLOR_SECONDARY}{COLOR_BOLD}{args[0]} {COLOR_RESET}{COLOR_SECONDARY}[OPTIONS] [COMMAND]{COLOR_RESET}')
+    print('')
+    print(f'{COLOR_SECONDARY}{COLOR_BOLD}Commands:{COLOR_RESET}')
+    max_len = 0
+    for cmd in cmds:
+        s = ', '.join(cmd.aliases)
+        if len(s) > max_len:
+            max_len = len(s)
+    max_len = int((max_len + TAB_SIZE) / TAB_SIZE) * TAB_SIZE
+    for cmd in cmds:
+        s = ', '.join(cmd.aliases)
+        print(f'{'':<{TAB_SIZE}}', end='')
+        print(f'{COLOR_PRIMARY}{COLOR_BOLD}{s:<{max_len}}{COLOR_RESET}' + cmd.desc)
 
-def error(msg, returncode = -1):
+def error(msg, returncode = ERROR_CODE):
     print(f"{COLOR_BOLD}solace: {COLOR_ERROR}{COLOR_BOLD}error:{COLOR_RESET}", msg, file=sys.stderr)
     sys.exit(returncode)
 
-def cmd_build(opts):
-    if not did_build:
-        info("project up to date")
-    sys.exit(EXIT_SUCCESS)
-
-def cmd_run(opts):
-    arch = None
-
-    for _arch in archs:
-        if platform.machine() in _arch.names:
-            arch = _arch
-            break 
-
-    if arch is None:
-        error("unsupported arch")
-
-    if shutil.which(arch.qemu_cmd) is None:
-        error(f"{arch.qemu_cmd} not found")
-
-    info(f"running {arch.qemu_cmd}...")
-
-    flags = arch.flags
-    if opts.debug:
-        flags += ["-s", "-S"]
-        qemu_proc = subprocess.Popen([arch.qemu_cmd] + flags)
-        subprocess.run(["gdb", "-q", "-x", "gdb/k.gdb"])
-        qemu_proc.terminate()
-    else:   
-        proc = subprocess.run([arch.qemu_cmd] + flags)
-        sys.exit(proc.returncode)
-
-def cmd_bear(opts):
-    if shutil.which("bear") is None:
-        error("bear not found")
-    
-    subprocess.run(["make", "-s", "clean"])
-
-    try:
-        os.mkdir(build_dir)
-    except:
-        error(f"failed to create build directory: '{build_dir}'")
-
-    proc = subprocess.run(["bear", "--output", f"{build_dir}/compile_commands.json", "--", "make", "-j4"])
-
-    if proc.returncode == 0:
-        info("generated compile_commands.json")    
-
+def cmd_build():
+    info('building kernel...')
+    proc = subprocess.run(['meson', 'compile', '-C', BUILD_DIR])
+    if proc.returncode != 0:
+        error('failed to build kernel')
     sys.exit(proc.returncode)
 
-if __name__ == "__main__":
-    cmds = [
-        cmd(["build", "b"], "build project", cmd_build),
-        cmd(["run", "r"], "run qemu", cmd_run),
-        cmd(["bear"], "create compile commands", cmd_bear),
-    ]
+def cmd_run():
+    info('running kernel...')
+    proc = subprocess.run(['meson', 'compile', '-C', BUILD_DIR], stdout=subprocess.DEVNULL)
+    if proc.returncode != 0:
+        error('failed to build kernel')
+        sys.exit(proc.returncode)
+    proc = subprocess.run(QEMU_ARGS)
+    sys.exit(proc.returncode)
 
-    archs = [
-        arch(("x86_64"), "qemu-system-x86_64")
-    ]
+def cmd_test():
+    info('attaching to kernel...')
+    proc = subprocess.run(['meson', 'compile', '-C', BUILD_DIR], stdout=subprocess.DEVNULL)
+    if proc.returncode != 0:
+        error('failed to build kernel')
+        sys.exit(proc.returncode)
+    qemu_proc = subprocess.Popen(QEMU_ARGS + ['-s', '-S'])
+    gdb_proc = subprocess.Popen(['gdb', '-q', '-x', 'gdb/k.gdb'])
+    while qemu_proc.poll() is None and gdb_proc.poll() is None:
+        time.sleep(0.1)
+    if qemu_proc.poll() is None:
+        qemu_proc.terminate()
+    else:
+        gdb_proc.kill()
+    # GDB messes up terminal with external signal so try and fix it
+    subprocess.run(['reset'])
+    sys.exit(0)
 
-    if shutil.which("make") is None:
-        error("make not found")
+cmds = [
+    cmd(cmd_build, ['build', 'b'], 'builds kernel'),
+    cmd(cmd_run, ['run', 'r'], 'runs kernel in QEMU'),
+    cmd(cmd_test, ['test', 't'], 'runs kernel in QEMU and attaches GDB')
+]
 
-    if len(sys.argv) > 0:
-        cmd_name = sys.argv[0]
+if __name__ == '__main__':
+    args = sys.argv
 
-    formatter = HelpFormatter()
+    if len(args) < 2:
+        usage()
+        sys.exit(0)
 
-    parser = optparse.OptionParser(
-        formatter=formatter,
-        prog=cmd_name,
-        usage=get_usage(),
-    )
+    cmd_name = None
+    for arg in args[1:]:
+        if arg[0] == '-':
+            for c in arg[1:]:
+                if c == 'q':
+                    is_quiet = True
+                else:
+                    error('unknown flag \'' + arg[0] + '\'')
+        elif cmd_name is None:
+            cmd_name = arg
+        else:
+            usage()
+            sys.exit(ERROR_CODE)
 
-    parser.add_option("-q", "--quiet", action="store_true", dest="quiet")
-    parser.add_option("-d", "--debug", action="store_true", dest="debug")
-
-    opts, args = parser.parse_args()
-    
-    if len(args) == 0:
-        parser.print_help()
-        sys.exit(1)
-
-    if opts.quiet:
-        is_quiet = True
-
-    found_cmd = None
-
-    for cmd in cmds:
-        if args[0] in cmd.names:
-            found_cmd = cmd
+    cmd = None
+    for _cmd in cmds:
+        if cmd_name in _cmd.aliases:
+            cmd = _cmd
             break
 
-    if found_cmd is None:
-        parser.print_help()
-        sys.exit(1)
+    if cmd == None:
+        usage()
+        sys.exit(ERROR_CODE)
 
-    proc = subprocess.run(["make", "-s", "-q"])
-
-    if proc.returncode == 1:
-        did_build = True
-        stdout_redir = None
-        if is_quiet:
-            stdout_redir = subprocess.DEVNULL
-        proc = subprocess.run(["make"], stdout=stdout_redir)
-        if proc.returncode != 0:
-            sys.exit(proc.returncode)
-
-    if not found_cmd.fn is None:
-        found_cmd.fn(opts)
+    cmd.fn()

@@ -10,17 +10,22 @@
       = { 0xf6b8f4b39de7d1ae, 0xfab91a6940fcb9cf, 0x785c6ed015d3e316,         \
           0x181e920a7852b9d9 };
 
+#define LIMINE_BOOTLOADER_REQUEST(MAGIC1, MAGIC2)                             \
+  {                                                                           \
+    .id = { LIMINE_COMMON_MAGIC, MAGIC1, MAGIC2 }                             \
+  }
+
 #define LIMINE_BOOTLOADER_INFO_REQUEST                                        \
-  { LIMINE_COMMON_MAGIC, 0xf55038d8e2a1202f, 0x279426fcf5f59740 }
+  LIMINE_BOOTLOADER_REQUEST (0xf55038d8e2a1202f, 0x279426fcf5f59740)
 
 #define LIMINE_EXECUTABLE_CMDLINE_REQUEST                                     \
-  { LIMINE_COMMON_MAGIC, 0x4b161536e598651e, 0xb390ad4a2f1f303a }
+  LIMINE_BOOTLOADER_REQUEST (0x4b161536e598651e, 0xb390ad4a2f1f303a)
 
 #define LIMINE_FRAMEBUFFER_REQUEST                                            \
-  { LIMINE_COMMON_MAGIC, 0x9d5827dcd881dd75, 0xa3148604f6fab11b }
+  LIMINE_BOOTLOADER_REQUEST (0x9d5827dcd881dd75, 0xa3148604f6fab11b)
 
 #define LIMINE_DATE_AT_BOOT_REQUEST                                           \
-  { LIMINE_COMMON_MAGIC, 0x502746e184c088aa, 0xfbc5ec83e6327893 }
+  LIMINE_BOOTLOADER_REQUEST (0x502746e184c088aa, 0xfbc5ec83e6327893)
 
 #define LIMINE_REQUESTS_END_MARKER                                            \
   u64 limine_requests_end_marker[2]                                           \

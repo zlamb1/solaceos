@@ -1,0 +1,2 @@
+CROSS_FILE=x86_64-elf.ini
+meson setup --cross-file $CROSS_FILE build

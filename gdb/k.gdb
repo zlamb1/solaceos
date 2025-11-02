@@ -1,4 +1,4 @@
-file build/kernel.img
+file build/solace.elf
 
 target remote localhost:1234
 
