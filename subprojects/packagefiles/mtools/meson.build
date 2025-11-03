@@ -16,7 +16,6 @@ mtools_tgt = custom_target(
     'build-mtools',
     output : [ 'mcopy', 'mmd' ],
     command : [ build_script, make, configure_script.full_path(), '@OUTDIR@' ],
-    build_by_default : true,
 )
 
 mcopy = mtools_tgt[0]

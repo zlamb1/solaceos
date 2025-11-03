@@ -14,20 +14,11 @@ host_cpu_family = host_machine.cpu_family()
 
 objcopy = find_program('objcopy')
 
-limine_proj = subproject('limine')
-limine = limine_proj.get_variable('limine')
-limine_bios_sys = limine_proj.get_variable('limine_bios_sys')
-limine_conf = files('src/limine/limine.conf')
-
 if host_cpu_family == 'x86_64'
     limine_target = 'x86_64'
 else
     error('unsupported arch: ' + host_cpu_family)
 endif
-
-mtools_proj = subproject('mtools')
-mcopy = mtools_proj.get_variable('mcopy')
-mmd = mtools_proj.get_variable('mmd')
 
 arch_srcs = files(
     'src/arch/x86_64/fence.c'
@@ -81,21 +72,41 @@ kernel_elf = executable(
     nasm_args : [ '-g', '-F', 'dwarf' ],
 )
 
-build_script = find_program('build.py', dirs : meson.project_source_root())
+bios_build = find_program('py/build-bios.py', dirs : meson.project_source_root())
 
-boot_img = custom_target(
-    input : [ kernel_elf, limine_bios_sys, limine_conf ],
+limine_proj = subproject('limine')
+limine_conf = files('src/limine/limine.conf')
+
+mtools_proj = subproject('mtools')
+
+mcopy = find_program('mcopy', required : false)
+mmd = find_program('mmd', required : false)
+
+if mcopy.found() and mmd.found()
+    mcopy = mcopy.full_path()
+    mmd = mmd.full_path()
+else
+    mcopy = mtools_proj.get_variable('mcopy')
+    mmd = mtools_proj.get_variable('mmd')
+endif
+
+custom_target(
+    'bios-img',
+    input : [  
+        limine_proj.get_variable('limine_bios_sys'), 
+        limine_conf,
+        kernel_elf, 
+    ],
     output : [ 'solace.img' ],
     command : [ 
-        build_script, 
+        bios_build, 
         '--parted', find_program('parted'), 
-        '--limine', limine, 
+        '--limine', limine_proj.get_variable('limine'), 
         '--mcopy', mcopy, 
         '--mmd', mmd, 
-        '--limine-bios-sys', limine_bios_sys, 
+        '--limine-bios-sys', limine_proj.get_variable('limine_bios_sys'), 
         '--limine-conf', limine_conf,
         '--output', '@OUTPUT@', 
         kernel_elf, 
     ],
-    build_by_default : true,
 )

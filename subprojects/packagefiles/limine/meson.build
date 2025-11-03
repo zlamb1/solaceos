@@ -2,7 +2,6 @@ project(
     'limine', 
     'c', 
     meson_version : '>= 1.6.0',
-    version : '10.2.1',
 )
 
 make = find_program('make')
@@ -14,7 +13,6 @@ limine_tgt = custom_target(
     'build-limine',
     output : [ 'limine', 'limine-bios.sys' ],
     command : [ build_script, '@OUTDIR@', bootstrap_script.full_path(), meson.project_source_root() / 'configure', make ],
-    build_by_default : true,
 )
 
 limine = limine_tgt[0]

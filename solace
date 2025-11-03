@@ -58,7 +58,7 @@ def cmd_build():
 
 def cmd_run():
     info('running kernel...')
-    proc = subprocess.run(['meson', 'compile', '-C', BUILD_DIR], stdout=subprocess.DEVNULL)
+    proc = subprocess.run(['meson', 'compile', 'bios-img', '-C', BUILD_DIR], stdout=subprocess.DEVNULL)
     if proc.returncode != 0:
         error('failed to build kernel')
         sys.exit(proc.returncode)
@@ -67,7 +67,7 @@ def cmd_run():
 
 def cmd_test():
     info('attaching to kernel...')
-    proc = subprocess.run(['meson', 'compile', '-C', BUILD_DIR], stdout=subprocess.DEVNULL)
+    proc = subprocess.run(['meson', 'compile', 'bios-img', '-C', BUILD_DIR], stdout=subprocess.DEVNULL)
     if proc.returncode != 0:
         error('failed to build kernel')
         sys.exit(proc.returncode)

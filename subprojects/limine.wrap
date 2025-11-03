@@ -2,7 +2,7 @@
 depth = 1
 directory = limine
 patch_directory = limine
-revision = f59321995d957af36bf224feadaa9cb4ae3c08c5
+revision = HEAD
 url = https://github.com/limine-bootloader/limine
 
 [provide]

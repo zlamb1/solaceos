@@ -71,7 +71,6 @@ if __name__ == '__main__':
         elif kernel is None:
             kernel = arg
         else:
-            print(kernel)
             usage()
         i += 1
 
