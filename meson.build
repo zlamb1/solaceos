@@ -10,12 +10,20 @@ if not meson.is_cross_build()
     error('must cross compile (use x86_64-elf.ini)')
 endif
 
+host_cpu_family = host_machine.cpu_family()
+
 objcopy = find_program('objcopy')
 
 limine_proj = subproject('limine')
 limine = limine_proj.get_variable('limine')
 limine_bios_sys = limine_proj.get_variable('limine_bios_sys')
 limine_conf = files('src/limine/limine.conf')
+
+if host_cpu_family == 'x86_64'
+    limine_target = 'x86_64'
+else
+    error('unsupported arch: ' + host_cpu_family)
+endif
 
 mtools_proj = subproject('mtools')
 mcopy = mtools_proj.get_variable('mcopy')
@@ -67,7 +75,7 @@ kernel_elf = executable(
     'solace.elf',
     srcs,
     c_args : [ '-g', '-ffreestanding', '-nostdlib', '-fno-strict-aliasing', '-mno-red-zone', '-mcmodel=large' ],
-    include_directories : [ 'src' ],
+    include_directories : [ 'include' ],
     link_args : [ '-nostdlib', '-T', linker_script.full_path() ],
     link_depends : [ linker_script ],
     nasm_args : [ '-g', '-F', 'dwarf' ],
@@ -78,6 +86,16 @@ build_script = find_program('build.py', dirs : meson.project_source_root())
 boot_img = custom_target(
     input : [ kernel_elf, limine_bios_sys, limine_conf ],
     output : [ 'solace.img' ],
-    command : [ build_script, find_program('parted'), limine, mcopy, mmd, limine_bios_sys, limine_conf, kernel_elf, '@OUTPUT@' ],
+    command : [ 
+        build_script, 
+        '--parted', find_program('parted'), 
+        '--limine', limine, 
+        '--mcopy', mcopy, 
+        '--mmd', mmd, 
+        '--limine-bios-sys', limine_bios_sys, 
+        '--limine-conf', limine_conf,
+        '--output', '@OUTPUT@', 
+        kernel_elf, 
+    ],
     build_by_default : true,
 )
