@@ -1,0 +1,6 @@
+[wrap-git]
+branch = v10.x-binary
+depth = 1
+patch_directory = limine
+revision = HEAD
+url = https://codeberg.org/Limine/Limine.git

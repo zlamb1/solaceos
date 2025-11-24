@@ -1,0 +1,5 @@
+BasedOnStyle: LLVM
+IndentWidth: 2
+AlignConsecutiveMacros: true
+AlignConsecutiveAssignments: true
+SpaceAfterCStyleCast: true
