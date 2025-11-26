@@ -72,7 +72,7 @@ def cmd_test():
         error('failed to build kernel')
         sys.exit(proc.returncode)
     qemu_proc = subprocess.Popen(QEMU_ARGS + ['-s', '-S'])
-    gdb_proc = subprocess.Popen(['gdb', '-q', '-x', 'gdb/k.gdb'])
+    gdb_proc = subprocess.Popen(['gdb', '-q', '-x', 'gdb/kernel.gdb'])
     while qemu_proc.poll() is None and gdb_proc.poll() is None:
         time.sleep(0.1)
     if qemu_proc.poll() is None:

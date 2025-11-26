@@ -18,16 +18,22 @@ SRCDIR = 'src'
 inc = include_directories('include')
 
 srcs = files(
-    f'@SRCDIR@/main.cpp'
+    f'@SRCDIR@/gfx/fb.cpp',
+    f'@SRCDIR@/gfx/psf.cpp',
+    f'@SRCDIR@/gfx/vcon.cpp',
+    f'@SRCDIR@/abi.cpp',
+    f'@SRCDIR@/io.cpp',
+    f'@SRCDIR@/main.cpp',
 )
 
 linker_script = files(f'@SRCDIR@/kernel.ld')[0]
 
-c_args = [
+cpp_args = [
     '-ffreestanding',
     '-fno-exceptions',
     '-fno-rtti',
     '-fno-strict-aliasing',
+    '-fno-unwind-tables',
     '-mcmodel=large',
     '-mno-red-zone',
     '-g',
@@ -43,10 +49,33 @@ nasm_args = [
     '-F', 'dwarf',
 ]
 
+build_font = custom_target(
+    input : files('assets/consolefont.psf'),
+    output : 'consolefont.psf',
+    command : [
+        find_program('cp'),
+        '@INPUT@', '@OUTPUT@',
+    ],
+)
+
+font_obj = custom_target(
+    input : build_font,
+    output : 'consolefont.o',
+    command : [
+        find_program('objcopy'),
+        '-O', 'elf64-x86-64',
+        '-B', 'i386',
+        '-I', 'binary',
+        '@INPUT@', '@OUTPUT@',
+    ]
+)
+
+srcs += font_obj
+
 kernel = executable(
     'solace.elf',
     srcs,
-    c_args : c_args,
+    cpp_args : cpp_args,
     include_directories : inc,
     link_args : link_args,
     link_depends : [ linker_script ],

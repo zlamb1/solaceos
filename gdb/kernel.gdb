@@ -4,5 +4,5 @@ target remote localhost:1234
 
 layout reg
 
-b kmain
+b KernelMain
 c
