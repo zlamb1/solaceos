@@ -6,6 +6,8 @@ namespace IO {
 
 using ostream = AbstractOutputStream;
 
+static auto EndLine = ostream::endl;
+
 class IOConsole {
 public:
   IOConsole();
@@ -16,14 +18,10 @@ public:
     return *consoleDevice << value;
   }
 
-  inline ostream &endl() { return consoleDevice->endl(); }
-
 protected:
   ConsoleDevice *consoleDevice;
 };
 
 extern IOConsole Log;
-
-static inline ostream &endl() { return Log.endl(); }
 
 } // namespace IO

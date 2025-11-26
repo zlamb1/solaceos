@@ -25,7 +25,7 @@ void KernelMain(void) {
     }
   }
 
-  IO::Log << "Booting Kernel...";
+  IO::Log << "Booting Kernel..." << IO::EndLine;
 
   for (;;)
     ;

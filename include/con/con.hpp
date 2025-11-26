@@ -4,8 +4,12 @@
 
 namespace IO {
 
+struct EndLine {};
+
 class AbstractOutputStream {
 public:
+  static EndLine endl;
+
   virtual AbstractOutputStream &operator<<(bool b)          = 0;
   virtual AbstractOutputStream &operator<<(char ch)         = 0;
   virtual AbstractOutputStream &operator<<(const char *str) = 0;
@@ -13,7 +17,7 @@ public:
   virtual AbstractOutputStream &operator<<(u32 n)           = 0;
   virtual AbstractOutputStream &operator<<(i64 n)           = 0;
   virtual AbstractOutputStream &operator<<(u64 n)           = 0;
-  virtual AbstractOutputStream &endl()                      = 0;
+  virtual AbstractOutputStream &operator<<(EndLine endl)    = 0;
 };
 
 template <typename T> class OutputStream : public AbstractOutputStream {
@@ -27,6 +31,7 @@ public:
   AOS &operator<<(u32 n) override { return impl().Write(n); }
   AOS &operator<<(i64 n) override { return impl().Write(n); }
   AOS &operator<<(u64 n) override { return impl().Write(n); }
+  AOS &operator<<(EndLine endl) override { return impl().Write(endl); };
 
 private:
   T &impl() { return static_cast<T &>(*this); }
@@ -40,12 +45,6 @@ public:
   virtual void WriteByte(char byte)                    = 0;
   virtual void WriteBuffer(const char *buf, usize len) = 0;
   virtual void Flush()                                 = 0;
-
-  virtual AOS &endl() override {
-    WriteByte('\n');
-    Flush();
-    return *this;
-  }
 
 private:
   AOS &Write(bool b) {
@@ -134,6 +133,12 @@ private:
       WriteByte(buf[i]);
 
   EndWrite:
+    return *this;
+  }
+
+  AOS &Write(EndLine) {
+    WriteByte('\n');
+    Flush();
     return *this;
   }
 };

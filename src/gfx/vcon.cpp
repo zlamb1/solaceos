@@ -1,5 +1,6 @@
 #include "gfx/vcon.hpp"
 #include "gfx/psf.hpp"
+#include "option.hpp"
 
 extern char _binary_consolefont_psf_start;
 extern char _binary_consolefont_psf_end;
@@ -33,7 +34,13 @@ Option<VirtualConsole> VirtualConsole::Create(limine_framebuffer *fb) {
   if (!font.ValidateFont())
     return Option<VirtualConsole>::None();
 
-  return Some(VirtualConsole(optFB.unwrap(), font));
+  auto _fb = optFB.unwrap();
+
+  if (font.GetGlyphWidth() > _fb.GetWidth() ||
+      font.GetGlyphHeight() > _fb.GetHeight())
+    return Option<VirtualConsole>::None();
+
+  return Some(VirtualConsole(_fb, font));
 }
 
 void VirtualConsole::ReverseCursor(void) {
@@ -64,6 +71,7 @@ void VirtualConsole::WriteByte(char byte) {
     cx = 0;
     return;
   case '\n':
+    cx = 0;
     if (cy < height - 1)
       ++cy;
     return;
