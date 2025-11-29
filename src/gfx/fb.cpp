@@ -11,7 +11,7 @@ Option<Framebuffer> Framebuffer::Create(limine_framebuffer *fb) {
       fb->blue_mask_shift > 31)
     return Option<Framebuffer>::None();
 
-  return Some(Framebuffer(fb));
+  return Option<Framebuffer>::Some(Framebuffer(fb));
 }
 
 void Framebuffer::FillRect(u64 rectX, u64 rectY, u64 rectWidth, u64 rectHeight,

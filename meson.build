@@ -2,6 +2,7 @@ project(
     'SolaceOS',
     [ 'cpp', 'nasm' ],
     default_options : [
+        'cpp_std=c++20',
         'warning_level=3',
         'werror=true',
     ],
@@ -15,19 +16,6 @@ endif
 
 SRCDIR = 'src'
 
-inc = include_directories('include')
-
-srcs = files(
-    f'@SRCDIR@/gfx/fb.cpp',
-    f'@SRCDIR@/gfx/psf.cpp',
-    f'@SRCDIR@/gfx/vcon.cpp',
-    f'@SRCDIR@/abi.cpp',
-    f'@SRCDIR@/io.cpp',
-    f'@SRCDIR@/main.cpp',
-)
-
-linker_script = files(f'@SRCDIR@/kernel.ld')[0]
-
 cpp_args = [
     '-ffreestanding',
     '-fno-exceptions',
@@ -35,9 +23,12 @@ cpp_args = [
     '-fno-strict-aliasing',
     '-fno-unwind-tables',
     '-mcmodel=large',
+    '-mgeneral-regs-only',
     '-mno-red-zone',
     '-g',
 ]
+
+linker_script = files(f'@SRCDIR@/kernel.ld')[0]
 
 link_args = [
     '-nostdlib',
@@ -48,6 +39,24 @@ nasm_args = [
     '-g',
     '-F', 'dwarf',
 ]
+
+inc = include_directories('include')
+
+srcs = files(
+    f'@SRCDIR@/gfx/fb.cpp',
+    f'@SRCDIR@/gfx/psf.cpp',
+    f'@SRCDIR@/gfx/vconsole.cpp',
+    f'@SRCDIR@/abi.cpp',
+    f'@SRCDIR@/io.cpp',
+    f'@SRCDIR@/main.cpp',
+)
+
+arch_srcs = files(
+    f'@SRCDIR@/arch/x86/atomic.cpp',
+    f'@SRCDIR@/arch/x86/irq.cpp',
+)
+
+srcs += arch_srcs
 
 build_font = custom_target(
     input : files('assets/consolefont.psf'),

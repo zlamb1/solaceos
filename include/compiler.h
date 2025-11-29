@@ -10,4 +10,6 @@
 #define RESTRICT __restrict__
 #define UNUSED   __attribute__((unused))
 
+#define cfence() __asm__ volatile("" ::: "memory")
+
 #endif

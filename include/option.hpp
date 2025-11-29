@@ -1,11 +1,16 @@
 #pragma once
 
-#include "new.hpp"
+#include <new>
+#include <utility>
 
 template <typename T> class Option {
 public:
   Option() : isSome(false) {}
   Option(T _value) : isSome(true) { new (value) T(_value); }
+
+  template <typename... Args> Option(Args &&...args) : isSome(true) {
+    new (value) T(std::forward<Args>(args)...);
+  }
 
 #define UNWRAP(VALUE) reinterpret_cast<T *>(VALUE)
 
@@ -14,9 +19,14 @@ public:
       UNWRAP(value)->~T();
   };
 
-  static Option<T> None() { return Option(); }
-  template <typename S> static Option<S> Some(S value) {
-    return Option<S>(value);
+  static Option<T> None() { return Option<T>(); }
+
+  template <typename S> static Option<S> None() { return Option<S>(); }
+
+  static Option<T> Some(T value) { return Option<T>(value); }
+
+  template <typename... Args> static Option<T> Some(Args &&...args) {
+    return Option<T>(std::forward<Args>(args)...);
   }
 
   bool hasValue() const { return isSome; }
@@ -36,7 +46,3 @@ protected:
   bool isSome;
   alignas(T) unsigned char value[sizeof(T)];
 };
-
-template <typename S> static Option<S> Some(S value) {
-  return Option<S>(value);
-}

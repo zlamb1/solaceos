@@ -52,7 +52,7 @@ Option<BitmapFont> LoadPSFFont(void *header, usize len) {
       if (glyphCount * psf1Header.glyphHeight > len - sizeof(PSF1Header))
         return Option<BitmapFont>::None();
 
-      return Some(BitmapFont(
+      return Option<BitmapFont>::Some(BitmapFont(
           static_cast<void *>(static_cast<char *>(header) + sizeof(PSF1Header)),
           glyphCount, 8, psf1Header.glyphHeight, psf1Header.glyphHeight));
     }
@@ -86,7 +86,7 @@ Option<BitmapFont> LoadPSFFont(void *header, usize len) {
           len - sizeof(PSF2Header))
         return Option<BitmapFont>::None();
 
-      return Some(BitmapFont(
+      return Option<BitmapFont>::Some(BitmapFont(
           static_cast<void *>(static_cast<char *>(header) + sizeof(psf2Header)),
           psf2Header.glyphCount, psf2Header.glyphWidth, psf2Header.glyphHeight,
           psf2Header.glyphStride));

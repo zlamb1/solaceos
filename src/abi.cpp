@@ -1,12 +1,12 @@
 #include "common.h"
-#include "new.hpp"
 
 #define ATEXIT_FUNCTION_CAP 128
 
-typedef void (*destructor_type)(void *);
+typedef void ctor_type(void);
+typedef void (*dtor_type)(void *);
 
 struct atexit_func_entry {
-  destructor_type destructor;
+  dtor_type destructor;
   void *obj;
   void *dso_handle;
 };
@@ -41,10 +41,33 @@ void operator delete[](void *, usize) {
 
 extern "C" {
 
+/* C / C++ Constructors Init */
+
+extern void (*__preinit_array_start[])(void) __attribute__((weak));
+extern void (*__preinit_array_end[])(void) __attribute__((weak));
+extern void (*__init_array_start[])(void) __attribute__((weak));
+extern void (*__init_array_end[])(void) __attribute__((weak));
+
+extern "C++" void InvokeConstructors() {
+  usize count;
+
+  count = __preinit_array_end - __preinit_array_start;
+
+  for (usize i = 0; i < count; ++i)
+    __preinit_array_end[i]();
+
+  count = __init_array_end - __init_array_start;
+
+  for (usize i = 0; i < count; ++i)
+    __init_array_start[i]();
+}
+
+/* C / C++ Destructors Init */
+
 static int __dso_handle_a;
 void *__dso_handle = &__dso_handle_a;
 
-int __cxa_atexit(destructor_type f, void *obj, void *dso) {
+int __cxa_atexit(dtor_type f, void *obj, void *dso) {
   if (atexit_func_count >= ATEXIT_FUNCTION_CAP)
     return -1;
   auto ent        = atexit_func_table + atexit_func_count;

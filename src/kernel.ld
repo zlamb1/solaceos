@@ -22,6 +22,21 @@ SECTIONS
         *(.rodata*)
     }
 
+    .init_array ALIGN(0x8) :
+    {
+        PROVIDE(__preinit_array_start = .);
+        KEEP(*(.preinit_array.*))
+        KEEP(*(.preinit_array))
+        PROVIDE(__preinit_array_end = .);
+
+        . = ALIGN(0x8);
+
+        PROVIDE(__init_array_start = .);
+        KEEP(*(.init_array.*))
+        KEEP(*(.init_array))
+        PROVIDE(__init_array_end = .);
+    }
+
     .bss ALIGN(0x1000) :
     {
         *(.bss)

@@ -1,27 +1,39 @@
 #pragma once
 
-#include "con/con.hpp"
+#include "common.h"
+#include "io/console.hpp"
+#include "smp/spinlock.hpp"
 
 namespace IO {
 
-using ostream = AbstractOutputStream;
-
-static auto EndLine = ostream::endl;
-
-class IOConsole {
+class KernelConsole {
 public:
-  IOConsole();
+  void AddConsoleDevice(ConsoleDevice *console);
 
-  void SetConsoleDevice(ConsoleDevice *consoleDevice);
+  void Flush();
 
-  template <typename T> ostream &operator<<(T &value) {
-    return *consoleDevice << value;
-  }
+  void Write(const char *str);
+  void Write(const char *str, usize len);
 
-protected:
-  ConsoleDevice *consoleDevice;
+  inline void operator<<(const char *str) { Write(str); }
+
+private:
+  struct Log {
+  public:
+    inline static char m_init[512];
+
+    SMP::SpinLock m_lock;
+    char *m_log = m_init;
+
+    u32 m_tail = 0, m_first = 0, m_len = 512;
+
+    void Write(char ch);
+  } m_klog{};
+
+  SMP::SpinLock m_lock;
+  ConsoleDevice *m_consoles = nullptr;
 };
 
-extern IOConsole Log;
+extern KernelConsole Log;
 
 } // namespace IO

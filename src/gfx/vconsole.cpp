@@ -1,4 +1,4 @@
-#include "gfx/vcon.hpp"
+#include "gfx/vconsole.hpp"
 #include "gfx/psf.hpp"
 #include "option.hpp"
 
@@ -40,69 +40,64 @@ Option<VirtualConsole> VirtualConsole::Create(limine_framebuffer *fb) {
       font.GetGlyphHeight() > _fb.GetHeight())
     return Option<VirtualConsole>::None();
 
-  return Some(VirtualConsole(_fb, font));
+  return Option<VirtualConsole>::Some(VirtualConsole(_fb, font));
 }
 
 void VirtualConsole::ReverseCursor(void) {
-  if (cx)
-    --cx;
-  else if (cy) {
-    cx = width - 1;
-    --cy;
+  if (m_x)
+    --m_x;
+  else if (m_y) {
+    m_x = m_width - 1;
+    --m_y;
   }
 }
 
 void VirtualConsole::AdvanceCursor(void) {
-  if (++cx >= width) {
-    cx = 0;
-    if (++cy >= height)
-      cy = height - 1;
+  if (++m_x >= m_width) {
+    m_x = 0;
+    if (++m_y >= m_height)
+      m_y = m_height - 1;
   }
 }
 
-void VirtualConsole::WriteByte(char byte) {
-  u8 b = byte;
+void VirtualConsole::WriteUnlocked(const char *str, usize len) {
+  for (usize i = 0; i < len; ++i) {
+    u8 b = str[i];
 
-  switch (b) {
-  case '\b':
-    ReverseCursor();
-    return;
-  case '\r':
-    cx = 0;
-    return;
-  case '\n':
-    cx = 0;
-    if (cy < height - 1)
-      ++cy;
-    return;
+    switch (b) {
+    case '\b':
+      ReverseCursor();
+      return;
+    case '\r':
+      m_x = 0;
+      return;
+    case '\n':
+      m_x = 0;
+      if (m_y < m_height - 1)
+        ++m_y;
+      return;
+    }
+
+    if (b >= m_font.GetGlyphCount())
+      return;
+
+    u64 x = m_x * m_font.GetGlyphWidth();
+    u64 y = m_y * m_font.GetGlyphHeight();
+
+    m_fb.DrawBitmap(static_cast<const u8 *>(m_font.GetGlyphData()) +
+                        (b * m_font.GetGlyphStride()),
+                    m_font.GetGlyphWidth(), m_font.GetGlyphHeight(),
+                    ((m_font.GetGlyphWidth() + 7) & ~7) >> 3, x, y, true,
+                    Color::WHITE, Color::BLACK);
+
+    AdvanceCursor();
   }
-
-  if (b >= font.GetGlyphCount())
-    return;
-
-  u64 x = cx * font.GetGlyphWidth();
-  u64 y = cy * font.GetGlyphHeight();
-
-  fb.DrawBitmap(static_cast<const u8 *>(font.GetGlyphData()) +
-                    (b * font.GetGlyphStride()),
-                font.GetGlyphWidth(), font.GetGlyphHeight(),
-                ((font.GetGlyphWidth() + 7) & ~7) >> 3, x, y, true,
-                Color::WHITE, Color::BLACK);
-
-  AdvanceCursor();
 }
-
-void VirtualConsole::WriteBuffer(const char *buf, usize len) {
-  for (usize i = 0; i < len; ++i)
-    WriteByte(buf[i]);
-}
-
-void VirtualConsole::Flush() {}
 
 VirtualConsole::VirtualConsole(Framebuffer fb, BitmapFont font)
-    : fb(fb), font(font), width(0), height(0), cx(0), cy(0) {
-  width  = fb.GetWidth() / font.GetGlyphWidth();
-  height = fb.GetHeight() / font.GetGlyphHeight();
+    : m_fb(fb), m_font(font), m_width(0), m_height(0), m_x(0), m_y(0) {
+  m_width  = fb.GetWidth() / font.GetGlyphWidth();
+  m_height = fb.GetHeight() / font.GetGlyphHeight();
 }
 
 } // namespace Gfx
