@@ -1,13 +1,33 @@
 #include "io.hpp"
+#include "smp/lock.hpp"
 
 namespace IO {
 
-KernelConsole Log = KernelConsole();
+KernelConsole Log;
 
-void KernelConsole::AddConsoleDevice(ConsoleDevice *console) {
-  auto guard      = m_lock.AsGuard();
-  console->m_next = m_consoles;
-  m_consoles      = console;
+void KernelConsole::AddConsoleDevice(ConsoleDevice *console, bool write_log) {
+  {
+    auto consoles_guard = m_lock.AsGuard();
+    console->m_next     = m_consoles;
+    m_consoles          = console;
+  }
+
+  if (write_log) {
+    auto klog_guard    = m_klog.m_lock.AsGuard();
+    auto console_guard = console->m_lock.AsGuard();
+    char *first        = m_klog.m_log + m_klog.m_head;
+
+    if (m_klog.m_head <= m_klog.m_tail) {
+      usize len = m_klog.m_tail - m_klog.m_head;
+      console->Write<SMP::LockOperation::Unlocked>(first, len);
+    } else {
+      usize len = m_klog.m_len - m_klog.m_head;
+      console->Write<SMP::LockOperation::Unlocked>(first, len);
+      console->Write<SMP::LockOperation::Unlocked>(m_klog.m_log, m_klog.m_tail);
+    }
+
+    console->Flush<SMP::LockOperation::Unlocked>();
+  }
 }
 
 void KernelConsole::Flush() {
@@ -20,7 +40,9 @@ void KernelConsole::Flush() {
     char *first = m_klog.m_log + m_klog.m_first;
 
     while (console != nullptr) {
-      console->Write(first, len);
+      auto console_guard = console->m_lock.AsGuard();
+      console->Write<SMP::LockOperation::Unlocked>(first, len);
+      console->Flush<SMP::LockOperation::Unlocked>();
       console = console->m_next;
     }
   } else {
@@ -29,9 +51,9 @@ void KernelConsole::Flush() {
 
     while (console != nullptr) {
       auto console_guard = console->m_lock.AsGuard();
-      console->WriteUnlocked(first, len);
-      console->WriteUnlocked(m_klog.m_log, m_klog.m_tail);
-      console->FlushUnlocked();
+      console->Write<SMP::LockOperation::Unlocked>(first, len);
+      console->Write<SMP::LockOperation::Unlocked>(m_klog.m_log, m_klog.m_tail);
+      console->Flush<SMP::LockOperation::Unlocked>();
       console = console->m_next;
     }
   }
@@ -71,6 +93,9 @@ void KernelConsole::Log::Write(char ch) {
   m_log[m_tail++] = ch;
   if (m_tail == m_len)
     m_tail = 0;
+  if (m_tail == m_head && ++m_head == m_len) {
+    m_head = 0;
+  }
 }
 
 } // namespace IO

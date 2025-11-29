@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common.h"
+#include "smp/lock.hpp"
 #include "smp/spinlock.hpp"
 
 namespace IO {
@@ -13,24 +14,31 @@ public:
 
   virtual ~ConsoleDevice() = default;
 
-  void Flush() {
-    auto guard = m_lock.AsGuard();
-    FlushUnlocked();
+  template <SMP::LockOperation LO> void Flush() {
+    if constexpr (LO == SMP::LockOperation::Unlocked)
+      Flush();
+    else {
+      auto guard = m_lock.AsGuard();
+      Flush();
+    }
   }
 
-  virtual void FlushUnlocked() {}
-
-  inline void Write(const char *str, usize len) {
-    auto guard = m_lock.AsGuard();
-    WriteUnlocked(str, len);
+  template <SMP::LockOperation LO> void Write(const char *str, usize len) {
+    if constexpr (LO == SMP::LockOperation::Unlocked)
+      Write(str, len);
+    else {
+      auto guard = m_lock.AsGuard();
+      Write(str, len);
+    }
   }
-
-  virtual void WriteUnlocked(const char *str, usize len) = 0;
 
 protected:
   SMP::SpinLock m_lock;
 
   ConsoleDevice *m_next = nullptr;
+
+  virtual void Flush() {}
+  virtual void Write(const char *str, usize len) = 0;
 };
 
 } // namespace IO

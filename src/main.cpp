@@ -18,17 +18,18 @@ static Option<Gfx::VirtualConsole> vc;
 void KernelMain(void) {
   InvokeConstructors();
 
+  IO::Log << "Booting SolaceOS...\n";
+
   if (fb_request.response && fb_request.response->framebuffer_count) {
     limine_framebuffer *lfb = fb_request.response->framebuffers[0];
 
     vc = Gfx::VirtualConsole::Create(lfb);
 
     if (vc.hasValue()) {
+      IO::Log << "Initializing Virtual Console...\n";
       IO::Log.AddConsoleDevice(&vc.unwrap());
     }
   }
-
-  IO::Log << "Booting SolaceOS...\n";
 
   for (;;)
     ;

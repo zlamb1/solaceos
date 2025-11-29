@@ -60,22 +60,22 @@ void VirtualConsole::AdvanceCursor(void) {
   }
 }
 
-void VirtualConsole::WriteUnlocked(const char *str, usize len) {
+void VirtualConsole::Write(const char *str, usize len) {
   for (usize i = 0; i < len; ++i) {
     u8 b = str[i];
 
     switch (b) {
     case '\b':
       ReverseCursor();
-      return;
+      continue;
     case '\r':
       m_x = 0;
-      return;
+      continue;
     case '\n':
       m_x = 0;
       if (m_y < m_height - 1)
         ++m_y;
-      return;
+      continue;
     }
 
     if (b >= m_font.GetGlyphCount())

@@ -17,7 +17,7 @@ public:
   void ReverseCursor(void);
   void AdvanceCursor(void);
 
-  virtual void WriteUnlocked(const char *str, usize len) override;
+  virtual void Write(const char *str, usize len) override;
 
   inline VirtualConsole(const VirtualConsole &console)
       : m_fb(console.m_fb), m_font(console.m_font), m_width(console.m_width),

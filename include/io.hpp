@@ -8,7 +8,7 @@ namespace IO {
 
 class KernelConsole {
 public:
-  void AddConsoleDevice(ConsoleDevice *console);
+  void AddConsoleDevice(ConsoleDevice *console, bool writeLog = true);
 
   void Flush();
 
@@ -25,7 +25,7 @@ private:
     SMP::SpinLock m_lock;
     char *m_log = m_init;
 
-    u32 m_tail = 0, m_first = 0, m_len = 512;
+    u32 m_head = 0, m_tail = 0, m_first = 0, m_len = sizeof(m_init);
 
     void Write(char ch);
   } m_klog{};
