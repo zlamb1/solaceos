@@ -51,9 +51,12 @@ srcs = files(
     f'@SRCDIR@/main.cpp',
 )
 
+ARCHDIR = f'@SRCDIR@/arch/x86'
+
 arch_srcs = files(
-    f'@SRCDIR@/arch/x86/atomic.cpp',
-    f'@SRCDIR@/arch/x86/irq.cpp',
+    f'@ARCHDIR@/arch.cpp',
+    f'@ARCHDIR@/atomic.cpp',
+    f'@ARCHDIR@/irq.cpp',
 )
 
 srcs += arch_srcs

@@ -1,4 +1,5 @@
 #include "gfx/vconsole.hpp"
+#include "arch.hpp"
 #include "gfx/psf.hpp"
 #include "option.hpp"
 
@@ -60,6 +61,14 @@ void VirtualConsole::AdvanceCursor(void) {
   }
 }
 
+VirtualConsole::VirtualConsole(Framebuffer fb, BitmapFont font)
+    : m_fb(fb), m_font(font), m_width(0), m_height(0), m_x(0), m_y(0) {
+  m_width  = fb.GetWidth() / font.GetGlyphWidth();
+  m_height = fb.GetHeight() / font.GetGlyphHeight();
+}
+
+void VirtualConsole::Flush() { Arch::sfence(); }
+
 void VirtualConsole::Write(const char *str, usize len) {
   for (usize i = 0; i < len; ++i) {
     u8 b = str[i];
@@ -92,12 +101,6 @@ void VirtualConsole::Write(const char *str, usize len) {
 
     AdvanceCursor();
   }
-}
-
-VirtualConsole::VirtualConsole(Framebuffer fb, BitmapFont font)
-    : m_fb(fb), m_font(font), m_width(0), m_height(0), m_x(0), m_y(0) {
-  m_width  = fb.GetWidth() / font.GetGlyphWidth();
-  m_height = fb.GetHeight() / font.GetGlyphHeight();
 }
 
 } // namespace Gfx
