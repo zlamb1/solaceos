@@ -12,8 +12,8 @@ public:
 
   void Flush();
 
-  void Write(const char *str);
-  void Write(const char *str, usize len);
+  void Write(const char *str, bool flush = true);
+  void Write(const char *str, usize len, bool flush = true);
 
   inline void operator<<(const char *str) { Write(str); }
 
@@ -35,5 +35,8 @@ private:
 };
 
 extern KernelConsole Log;
+
+void Print(const char *fmt, ...);
+void PrintLn(const char *fmt, ...);
 
 } // namespace IO
