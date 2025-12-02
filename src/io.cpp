@@ -423,7 +423,7 @@ int Print(const char *fmt, ...) {
 }
 
 int PrintLn(const char *fmt, ...) {
-  int i;
+  int i, j;
   va_list args;
   va_start(args, fmt);
   i = Print(fmt, false, args);
@@ -432,7 +432,12 @@ int PrintLn(const char *fmt, ...) {
     Log.Flush();
     return i;
   }
-  return Print("\n", true);
+  j = Print("\n", true);
+  if (j < 0)
+    return j;
+  if (i == std::numeric_limits<int>::max())
+    return i;
+  return j + i;
 }
 
 } // namespace IO
