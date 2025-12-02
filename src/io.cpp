@@ -3,9 +3,20 @@
 #include <limits>
 
 #include "io.hpp"
+#include "memory.hpp"
+#include "smp/irq.hpp"
 #include "smp/lock.hpp"
 
 namespace IO {
+
+enum class LengthSpecifier {
+  None,
+  Half,
+  HalfHalf,
+  Long,
+  LongLong,
+  Size,
+};
 
 KernelConsole Log;
 
@@ -106,17 +117,24 @@ void KernelConsole::Log::Write(char ch) {
   }
 }
 
+void KernelConsole::Log::Write(const char *str, usize len) {
+  for (usize i = 0; i < len; ++i)
+    Write(str[i]);
+}
+
 template <unsigned char N> struct TmpBuf {
-  char buf[N];
-  int len = 0;
+  char m_buf[N];
+  int m_len    = 0;
+  usize m_tlen = 0;
 
   static_assert(N > 0);
 
   void Write(char ch) {
-    buf[len++] = ch;
-    if (len == N) {
-      Log.Write(buf, len, false);
-      len = 0;
+    ++m_tlen;
+    m_buf[m_len++] = ch;
+    if (m_len == N) {
+      Log.GetLog().Write(m_buf, m_len);
+      m_len = 0;
     }
   }
 
@@ -125,31 +143,60 @@ template <unsigned char N> struct TmpBuf {
       Write(*str);
   }
 
+  void Write(const char *str, usize len) {
+    usize move;
+
+    while (len) {
+      if (len < N - (usize) m_len)
+        move = len;
+      else
+        move = N - (usize) m_len;
+
+      Memory::Copy(m_buf + m_len, str, move);
+
+      str += move;
+      m_len += move;
+
+      if (m_len == N) {
+        Log.GetLog().Write(m_buf, m_len);
+        m_len = 0;
+      }
+
+      len -= move;
+    }
+  }
+
   void Reverse() {
-    for (int i = 0; i < len >> 1; ++i) {
-      char tmp         = buf[i];
-      buf[i]           = buf[len - 1 - i];
-      buf[len - 1 - i] = tmp;
+    for (int i = 0; i < m_len >> 1; ++i) {
+      char tmp             = m_buf[i];
+      m_buf[i]             = m_buf[m_len - 1 - i];
+      m_buf[m_len - 1 - i] = tmp;
     }
   }
 
   void WriteBuf() {
-    if (len) {
-      Log.Write(buf, len, false);
-      len = 0;
+    if (m_len) {
+      Log.GetLog().Write(m_buf, m_len);
+      m_len = 0;
     }
   }
 };
 
 #define TMP_BUF_SIZE 128
 
-void Print(const char *fmt, int flush, va_list args) {
+int Print(const char *fmt, int flush, va_list args) {
+  int result = 0;
+  const char *prev;
   char ch;
   TmpBuf<TMP_BUF_SIZE> tmpbuf;
+  LengthSpecifier ls;
 
-  // FIXME: change this to acquire klog lock to ensure atomic prints
+  Log.GetLog().m_lock.Acquire<IRQ::LockMode::IRQSave>();
 
 Read:
+  if (tmpbuf.m_tlen >= std::numeric_limits<int>::max())
+    goto End;
+
   ch = *fmt++;
 
   if (ch != '%') {
@@ -160,25 +207,59 @@ Read:
     goto Read;
   }
 
-  ch = *fmt++;
+  prev = fmt;
+  ch   = *fmt++;
 
   if (ch == '%') {
     tmpbuf.Write('%');
     goto Read;
   }
 
+  ls = LengthSpecifier::None;
+
+  if (ch == 'h') {
+    ls = LengthSpecifier::Half;
+    ch = *fmt++;
+
+    if (ch == 'h') {
+      ls = LengthSpecifier::HalfHalf;
+      ch = *fmt++;
+    }
+  }
+
+  if (ch == 'l') {
+    ls = LengthSpecifier::Long;
+    ch = *fmt++;
+
+    if (ch == 'l') {
+      ls = LengthSpecifier::LongLong;
+      ch = *fmt++;
+    }
+  }
+
+  if (ch == 'z') {
+    ls = LengthSpecifier::Size;
+    ch = *fmt++;
+  }
+
   if (ch == 'c') {
+    if (ls != LengthSpecifier::None)
+      goto Fail;
+
     tmpbuf.Write(va_arg(args, int));
     goto Read;
   }
 
   if (ch == 's') {
+    if (ls != LengthSpecifier::None)
+      goto Fail;
+
     tmpbuf.Write(va_arg(args, const char *));
     goto Read;
   }
 
   if (ch == 'd' || ch == 'i' || ch == 'u' || ch == 'b' || ch == 'B' ||
-      ch == 'o' || ch == 'x' || ch == 'X') {
+      ch == 'o' || ch == 'x' || ch == 'X' || ch == 'p') {
     bool is_capital    = false;
     unsigned char base = 10;
 
@@ -186,7 +267,25 @@ Read:
     unsigned long long ull;
 
     if (ch == 'd' || ch == 'i') {
-      ll = va_arg(args, int);
+      switch (ls) {
+      case LengthSpecifier::None:
+        ll = va_arg(args, int);
+        break;
+      case LengthSpecifier::Half:
+        ll = static_cast<short int>(va_arg(args, int));
+        break;
+      case LengthSpecifier::HalfHalf:
+        ll = static_cast<signed char>(va_arg(args, int));
+        break;
+      case LengthSpecifier::Long:
+        ll = va_arg(args, long int);
+        break;
+      case LengthSpecifier::LongLong:
+        ll = va_arg(args, long long int);
+        break;
+      case LengthSpecifier::Size:
+        goto Fail;
+      }
 
       if (ll < 0) {
         tmpbuf.Write('-');
@@ -197,38 +296,74 @@ Read:
           ull = static_cast<unsigned long long>(-ll);
       } else
         ull = ll;
+
+      goto WriteNumber;
     }
 
-    if (ch == 'u')
-      ull = va_arg(args, unsigned int);
+    if (ch == 'u' || ch == 'b' || ch == 'B' || ch == 'o' || ch == 'x' ||
+        ch == 'X') {
+      switch (ls) {
+      case LengthSpecifier::None:
+        ull = va_arg(args, unsigned int);
+        break;
+      case LengthSpecifier::Half:
+        ull = static_cast<unsigned short int>(va_arg(args, unsigned int));
+        break;
+      case LengthSpecifier::HalfHalf:
+        ull = static_cast<unsigned char>(va_arg(args, unsigned int));
+        break;
+      case LengthSpecifier::Long:
+        ull = va_arg(args, unsigned long int);
+        break;
+      case LengthSpecifier::LongLong:
+        ull = va_arg(args, unsigned long long int);
+        break;
+      case LengthSpecifier::Size:
+        ull = va_arg(args, size_t);
+        break;
+      }
+    }
 
     if (ch == 'b' || ch == 'B') {
       is_capital = ch == 'B';
       base       = 2;
-      ull        = va_arg(args, unsigned int);
       tmpbuf.Write('0');
       tmpbuf.Write(ch);
+      goto WriteNumber;
     }
 
     if (ch == 'o') {
       base = 8;
-      ull  = va_arg(args, unsigned int);
       tmpbuf.Write('0');
+      goto WriteNumber;
     }
 
     if (ch == 'x' || ch == 'X') {
       is_capital = ch == 'X';
       base       = 16;
-      ull        = va_arg(args, unsigned int);
       tmpbuf.Write('0');
       tmpbuf.Write(ch);
+      goto WriteNumber;
     }
+
+    if (ch == 'p') {
+      if (ls != LengthSpecifier::None)
+        goto Fail;
+
+      static_assert(sizeof(unsigned long long) >= sizeof(uintptr_t));
+      ull  = reinterpret_cast<uintptr_t>(va_arg(args, void *));
+      base = 16;
+      tmpbuf.Write('0');
+      tmpbuf.Write('x');
+    }
+
+  WriteNumber:
 
     if (ull == 0)
       tmpbuf.Write('0');
     else {
       // Note: tmpbuf capacity must be greater than max number of chars we write
-      // so that we do not prematurely write tmpbuf
+      // so that we do not prematurely write tmpbuf.
       static_assert(TMP_BUF_SIZE >= sizeof(ull) * CHAR_BIT);
 
       tmpbuf.WriteBuf();
@@ -247,35 +382,57 @@ Read:
     goto Read;
   }
 
-  // invalid specifier
-  // FIXME: emit warning
+  // We got a bad specifier.
+
+Fail: {
+  result = -1;
+  if (tmpbuf.m_tlen)
+    tmpbuf.Write('\n');
+  tmpbuf.Write("WARNING: Invalid format specifier '%");
+  tmpbuf.Write(prev, fmt - prev);
+  tmpbuf.Write("'\n");
+}
 
 End:
   tmpbuf.WriteBuf();
+
+  Log.GetLog().m_lock.Release<IRQ::LockMode::IRQSave>();
+
   if (flush)
     Log.Flush();
+
+  return !result ? tmpbuf.m_tlen : result;
 }
 
-void Print(const char *fmt, int flush, ...) {
+int Print(const char *fmt, int flush, ...) {
+  int i;
   va_list args;
   va_start(args, flush);
-  Print(fmt, flush, args);
+  i = Print(fmt, flush, args);
   va_end(args);
+  return i;
 }
 
-void Print(const char *fmt, ...) {
+int Print(const char *fmt, ...) {
+  int i;
   va_list args;
   va_start(args, fmt);
-  Print(fmt, true, args);
+  i = Print(fmt, true, args);
   va_end(args);
+  return i;
 }
 
-void PrintLn(const char *fmt, ...) {
+int PrintLn(const char *fmt, ...) {
+  int i;
   va_list args;
   va_start(args, fmt);
-  Print(fmt, false, args);
-  Print("\n", true);
+  i = Print(fmt, false, args);
   va_end(args);
+  if (i < 0) {
+    Log.Flush();
+    return i;
+  }
+  return Print("\n", true);
 }
 
 } // namespace IO

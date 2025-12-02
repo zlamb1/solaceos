@@ -10,12 +10,13 @@ namespace Memory {
 
 #ifndef MEMORY_OPERATIONS_C_IMPL
 
-void *Copy(void *RESTRICT dst, void *RESTRICT src, usize len);
-void *Move(void *dst, void *src, usize len);
+void *Copy(void *RESTRICT dst, const void *RESTRICT src, usize len);
+void *Move(void *dst, const void *src, usize len);
 
 #else
 
-static inline void *Copy(void *RESTRICT dst, void *RESTRICT src, usize len) {
+static inline void *Copy(void *RESTRICT dst, const void *RESTRICT src,
+                         usize len) {
   auto d = static_cast<char *>(dst);
   auto s = static_cast<const char *>(src);
 
@@ -25,7 +26,7 @@ static inline void *Copy(void *RESTRICT dst, void *RESTRICT src, usize len) {
   return dst;
 }
 
-static inline void *Move(void *dst, void *src, usize len) {
+static inline void *Move(void *dst, const void *src, usize len) {
   auto _d = reinterpret_cast<uintptr_t>(dst);
   auto _s = reinterpret_cast<uintptr_t>(src);
 

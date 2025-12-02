@@ -67,7 +67,10 @@ VirtualConsole::VirtualConsole(Framebuffer fb, BitmapFont font)
   m_height = fb.GetHeight() / font.GetGlyphHeight();
 }
 
-void VirtualConsole::Flush() { Arch::sfence(); }
+void VirtualConsole::Flush() {
+  // Flush write-combining memory.
+  Arch::StoreFence();
+}
 
 void VirtualConsole::Write(const char *str, usize len) {
   for (usize i = 0; i < len; ++i) {

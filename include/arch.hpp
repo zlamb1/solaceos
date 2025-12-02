@@ -2,6 +2,8 @@
 
 namespace Arch {
 
-void sfence(void);
+void StoreFence(void);
 
-}
+void BusyWaiting(void);
+
+} // namespace Arch

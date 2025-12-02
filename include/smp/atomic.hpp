@@ -18,6 +18,8 @@ public:
 
   template <MemoryOrder MO> bool CompareExchangeWeak(T &expected, T desired);
 
+  template <MemoryOrder MO> bool CompareExchangeStrong(T &expected, T desired);
+
 protected:
   T m_value;
 };

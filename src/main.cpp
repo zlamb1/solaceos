@@ -31,8 +31,7 @@ void KernelMain(void) {
     }
   }
 
-  IO::PrintLn("Test: %u", 123);
-
+  IO::PrintLn("Test: %p", &vc);
   for (;;)
     ;
 }

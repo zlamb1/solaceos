@@ -1,5 +1,6 @@
 #pragma once
 
+#include "arch.hpp"
 #include "irq.hpp"
 
 #include "atomic.hpp"
@@ -31,6 +32,8 @@ public:
 
   template <IRQ::LockMode LM> void Acquire();
 
+  template <IRQ::LockMode LM> bool TryAcquire();
+
   template <IRQ::LockMode LM> void Release();
 
   template <IRQ::LockMode LM> Guard<LM> AsGuard() { return Guard<LM>(*this); }
@@ -56,13 +59,42 @@ template <IRQ::LockMode LM> void SpinLock::Acquire() {
   }
 
   while (!m_lock.CompareExchangeWeak<MemoryOrder::Acquire>(expected, Locked)) {
-    while (m_lock.Load<MemoryOrder::Relaxed>() == Locked)
+    while (m_lock.Load<MemoryOrder::Relaxed>() == Locked) {
+      Arch::BusyWaiting();
       continue;
+    }
     expected = Unlocked;
   }
 
   if constexpr (LM == IRQ::LockMode::IRQSave)
     m_irq = irq;
+}
+
+template <IRQ::LockMode LM> bool SpinLock::TryAcquire() {
+  int expected = Unlocked, irq;
+
+  if constexpr (LM == IRQ::LockMode::IRQ)
+    IRQ::Disable();
+
+  if constexpr (LM == IRQ::LockMode::IRQSave) {
+    irq = IRQ::Save();
+    IRQ::Disable();
+  }
+
+  if (m_lock.CompareExchangeStrong<MemoryOrder::Acquire>(expected, Locked)) {
+    if constexpr (LM == IRQ::LockMode::IRQSave)
+      m_irq = irq;
+
+    return true;
+  }
+
+  if constexpr (LM == IRQ::LockMode::IRQ)
+    IRQ::Enable();
+
+  if constexpr (LM == IRQ::LockMode::IRQSave)
+    IRQ::Restore(irq);
+
+  return false;
 }
 
 template <IRQ::LockMode LM> void SpinLock::Release() {
